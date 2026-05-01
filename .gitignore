@@ -1,18 +1,52 @@
-# Environnement virtuel
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# =========================
+# Virtual Environment
+# =========================
 venv/
 env/
-.venv/
+ENV/
 
-# Python
-__pycache__/
-*.pyc
-
+# =========================
 # Django
-db.sqlite3
+# =========================
 *.log
+db.sqlite3
+db.sqlite3-journal
+media/
 
-# Fichiers sensibles
+# =========================
+# Static files (collectstatic)
+# =========================
+staticfiles/
+
+# =========================
+# Environment variables
+# =========================
 .env
 
-# VS Code (optionnel)
+# =========================
+# VS Code / IDE
+# =========================
 .vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Migrations (optionnel)
+# =========================
+# migrations/
+# !*/migrations
+# !*/migrations/*.py
+# !*/migrations/*.pyc

@@ -130,7 +130,7 @@ class AccountsAuthTests(TestCase):
 
         self.assertRegex(
             email.body,
-            r"http://testserver/accounts/reset/[^/]+/[^/]+/",
+            r"http://testserver/reset/[^/]+/[^/]+/",
         )
 
     def test_password_reset_confirm_changes_password_without_logging_user_in(self):
@@ -259,7 +259,7 @@ class AccountsAuthTests(TestCase):
     def _get_valid_password_reset_form_url(self):
         email = self._request_password_reset_email()
         match = re.search(
-            r"http://testserver(?P<path>/accounts/reset/[^/]+/[^/]+/)",
+            r"http://testserver(?P<path>/reset/[^/]+/[^/]+/)",
             email.body,
         )
         self.assertIsNotNone(match)

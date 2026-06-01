@@ -436,6 +436,7 @@
     }
 }
 
+
 /* Styles pour la page de classement */
 .ranking-section {
     display: flex;
@@ -466,4 +467,91 @@
 
 .film-card {
     position: relative;
+}
+
+/* Détail d'un film : critiques et commentaires */
+.reviews-section,
+.review-list,
+.comments,
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reviews-section {
+    margin-top: 1rem;
+}
+
+.review-card {
+    scroll-margin-top: 1.5rem;
+}
+
+.review-header,
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.review-header h3,
+.comments h4 {
+    margin-bottom: 0.35rem;
+}
+
+.review-meta,
+.comment-header time,
+.comment-empty {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.92rem;
+}
+
+.review-text {
+    margin: 1rem 0 1.25rem;
+    color: var(--text-secondary);
+    white-space: pre-line;
+}
+
+.comments {
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-soft);
+}
+
+.comment-item {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-container-secondary);
+    border: 1px solid var(--border-soft);
+}
+
+.comment-item p {
+    margin: 0.65rem 0 0;
+    color: var(--text-secondary);
+    white-space: pre-line;
+}
+
+.comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.comment-form textarea {
+    resize: vertical;
+}
+
+.comment-login-prompt {
+    margin: 0.5rem 0 0;
+    padding: 0.95rem 1rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-container-secondary);
+    color: var(--text-secondary);
+}
+
+.comment-login-prompt a {
+    color: var(--color-primary-light);
+    font-weight: 650;
 }

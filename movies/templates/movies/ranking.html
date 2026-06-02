@@ -3,11 +3,88 @@
 {% block title %}Classement - Movie Review{% endblock %}
 
 {% block content %}
-<section class="placeholder-page">
-    <h1>Classement</h1>
-    <p>
-        Le classement des films sera disponible lorsque les critiques seront
-        intégrées au parcours complet.
-    </p>
+<section class="catalog-page">
+    <header class="page-header">
+        <div>
+            <h1>Classement des Films</h1>
+            <p class="page-copy">Découvrez les films les mieux notés et les plus populaires.</p>
+        </div>
+    </header>
+
+    <!-- Classement des films les mieux notés -->
+    <section class="ranking-section">
+        <h2>Films les mieux notés</h2>
+        
+        {% if films_mieux_notes %}
+            <section class="film-grid">
+                {% for film in films_mieux_notes %}
+                    <article class="film-card card">
+                        <div class="film-card-ranking-badge">
+                            <span class="ranking-position">#{{ forloop.counter }}</span>
+                        </div>
+                        <div class="film-card-media">
+                            {% if film.affiche %}
+                                <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+                            {% else %}
+                                <div class="film-card-placeholder">
+                                    <span>Aucune affiche</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="film-card-body">
+                            <h3>{{ film.titre }}</h3>
+                            <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+                            <p class="film-rating">{{ film.afficher_note }}</p>
+                            <p class="film-reviews">{{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }}</p>
+                            <a href="{% url 'movies:film_detail' film.pk %}" class="btn btn-primary btn-sm">Voir détails</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="empty-state card">
+                <h3>Aucun film noté pour le moment</h3>
+                <p>Les films seront affichés ici une fois qu'ils auront reçu des critiques.</p>
+            </section>
+        {% endif %}
+    </section>
+
+    <!-- Classement des films les plus populaires -->
+    <section class="ranking-section">
+        <h2>Films les plus populaires</h2>
+        
+        {% if films_populaires %}
+            <section class="film-grid">
+                {% for film in films_populaires %}
+                    <article class="film-card card">
+                        <div class="film-card-ranking-badge">
+                            <span class="ranking-position">#{{ forloop.counter }}</span>
+                        </div>
+                        <div class="film-card-media">
+                            {% if film.affiche %}
+                                <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+                            {% else %}
+                                <div class="film-card-placeholder">
+                                    <span>Aucune affiche</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="film-card-body">
+                            <h3>{{ film.titre }}</h3>
+                            <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+                            <p class="film-rating">{{ film.afficher_note }}</p>
+                            <p class="film-reviews">{{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }}</p>
+                            <a href="{% url 'movies:film_detail' film.pk %}" class="btn btn-primary btn-sm">Voir détails</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="empty-state card">
+                <h3>Aucun film critiqué pour le moment</h3>
+                <p>Les films seront affichés ici une fois qu'ils auront reçu des critiques.</p>
+            </section>
+        {% endif %}
+    </section>
 </section>
 {% endblock %}

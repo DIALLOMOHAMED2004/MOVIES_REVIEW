@@ -55,3 +55,4 @@ Thumbs.db
 django_project_source.txt
 extract_django_source.py
 docs/
+media/

@@ -3,12 +3,136 @@
 {% block title %}Accueil - Movie Review{% endblock %}
 
 {% block content %}
-<section class="placeholder-page">
-    <h1>Movie Review</h1>
-    <p>
-        Bienvenue sur Movie Review. Les pages films et critiques seront enrichies
-        dans les prochaines phases du projet.
-    </p>
-    <a href="{% url 'movies:films' %}" class="btn btn-primary">Voir les films</a>
+<section class="home-page">
+    <section class="home-hero">
+        <div class="home-hero-content">
+            <p class="home-eyebrow">Movie Review</p>
+            <h1>Découvrez, critiquez et partagez vos films préférés</h1>
+            <p class="page-copy">
+                Explorez le catalogue, consultez les avis de la communauté et trouvez
+                les films qui méritent votre prochaine séance.
+            </p>
+            <div class="home-actions">
+                <a href="{% url 'movies:films' %}" class="btn btn-primary">Explorer le catalogue</a>
+                <a href="{% url 'movies:classement' %}" class="btn btn-secondary">Voir le classement</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:profil' %}" class="btn btn-secondary">Voir mon profil</a>
+                {% else %}
+                    <a href="{% url 'accounts:inscription' %}" class="btn btn-secondary">Créer un compte</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="home-stats card card-soft" aria-label="Statistiques Movie Review">
+            <div>
+                <strong>{{ nombre_films }}</strong>
+                <span>film{{ nombre_films|pluralize }}</span>
+            </div>
+            <div>
+                <strong>{{ nombre_critiques }}</strong>
+                <span>critique{{ nombre_critiques|pluralize }}</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="popular-films-title">
+        <div class="section-heading home-section-heading">
+            <div>
+                <h2 id="popular-films-title">Films populaires</h2>
+                <p class="page-copy">Les films qui font le plus réagir la communauté.</p>
+            </div>
+            <a href="{% url 'movies:classement' %}" class="btn btn-secondary btn-sm">Classement complet</a>
+        </div>
+
+        {% if films_populaires %}
+            <section class="film-grid">
+                {% for film in films_populaires %}
+                    <article class="film-card card">
+                        <div class="film-card-media">
+                            {% if film.affiche %}
+                                <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+                            {% else %}
+                                <div class="film-card-placeholder">
+                                    <span>Aucune affiche</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="film-card-body">
+                            <h3>{{ film.titre }}</h3>
+                            <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+                            <p class="film-rating">{{ film.afficher_note }}</p>
+                            <p class="film-reviews">{{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }}</p>
+                            <a href="{% url 'movies:film_detail' film.pk %}" class="btn btn-primary btn-sm">Voir détails</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="empty-state card">
+                <h3>Aucun film populaire pour le moment</h3>
+                <p>Les films apparaîtront ici dès qu'ils recevront des critiques.</p>
+                <a href="{% url 'movies:films' %}" class="btn btn-secondary btn-sm">Explorer le catalogue</a>
+            </section>
+        {% endif %}
+    </section>
+
+    <section class="home-section" aria-labelledby="top-rated-films-title">
+        <div class="section-heading home-section-heading">
+            <div>
+                <h2 id="top-rated-films-title">Films les mieux notés</h2>
+                <p class="page-copy">Les meilleures notes moyennes parmi les films critiqués.</p>
+            </div>
+            <a href="{% url 'movies:classement' %}" class="btn btn-secondary btn-sm">Voir le top</a>
+        </div>
+
+        {% if films_mieux_notes %}
+            <section class="film-grid">
+                {% for film in films_mieux_notes %}
+                    <article class="film-card card">
+                        <div class="film-card-media">
+                            {% if film.affiche %}
+                                <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+                            {% else %}
+                                <div class="film-card-placeholder">
+                                    <span>Aucune affiche</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="film-card-body">
+                            <h3>{{ film.titre }}</h3>
+                            <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+                            <p class="film-rating">{{ film.afficher_note }}</p>
+                            <p class="film-reviews">{{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }}</p>
+                            <a href="{% url 'movies:film_detail' film.pk %}" class="btn btn-primary btn-sm">Voir détails</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="empty-state card">
+                <h3>Aucun film noté pour le moment</h3>
+                <p>Les meilleures notes seront mises en avant après les premières critiques.</p>
+                <a href="{% url 'movies:films' %}" class="btn btn-secondary btn-sm">Explorer le catalogue</a>
+            </section>
+        {% endif %}
+    </section>
+
+    <section class="home-cta card">
+        <div>
+            <h2>Rejoignez la communauté</h2>
+            <p class="page-copy">
+                Partagez vos avis, échangez autour des critiques et suivez les films
+                les mieux classés par les cinéphiles.
+            </p>
+        </div>
+        <div class="home-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'movies:films' %}" class="btn btn-primary">Découvrir des films</a>
+            {% else %}
+                <a href="{% url 'accounts:inscription' %}" class="btn btn-primary">Créer un compte gratuit</a>
+            {% endif %}
+            <a href="{% url 'movies:classement' %}" class="btn btn-secondary">Consulter le classement</a>
+        </div>
+    </section>
 </section>
 {% endblock %}

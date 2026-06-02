@@ -31,6 +31,22 @@ def _film_detail_queryset():
     )
 
 
+def _films_mieux_notes(limit):
+    return (
+        Film.objects.select_related("genre")
+        .filter(note_moyenne__isnull=False, nombre_critiques__gt=0)
+        .order_by("-note_moyenne", "-nombre_critiques", "titre")[:limit]
+    )
+
+
+def _films_populaires(limit):
+    return (
+        Film.objects.select_related("genre")
+        .filter(nombre_critiques__gt=0)
+        .order_by("-nombre_critiques", "-note_moyenne", "titre")[:limit]
+    )
+
+
 def _prepare_comment_forms(critiques, user, bound_form=None, target_id=None):
     if not user.is_authenticated:
         return
@@ -43,9 +59,19 @@ def _prepare_comment_forms(critiques, user, bound_form=None, target_id=None):
 
 
 class HomeView(TemplateView):
-    """Page d'accueil minimale utilisée par les redirections du projet."""
+    """Page d'accueil avec films populaires et films les mieux notés."""
 
     template_name = "movies/home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            "films_populaires": _films_populaires(4),
+            "films_mieux_notes": _films_mieux_notes(4),
+            "nombre_films": Film.objects.count(),
+            "nombre_critiques": Critique.objects.count(),
+        })
+        return context
 
 
 class MovieListView(TemplateView):
@@ -149,6 +175,18 @@ def ajouter_commentaire(request, critique_id):
 
 
 class RankingView(TemplateView):
-    """Placeholder du classement, conservé pour les liens de navigation."""
+    """
+    Affiche deux classements des films :
+    1. Films les mieux notés (par note moyenne décroissante)
+    2. Films les plus populaires (par nombre de critiques décroissant)
+    """
 
     template_name = "movies/ranking.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            "films_mieux_notes": _films_mieux_notes(20),
+            "films_populaires": _films_populaires(20),
+        })
+        return context

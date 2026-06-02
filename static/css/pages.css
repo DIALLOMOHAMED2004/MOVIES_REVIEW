@@ -151,6 +151,93 @@
     gap: 1rem;
 }
 
+.home-page,
+.home-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.home-page {
+    gap: 3rem;
+}
+
+.home-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 2rem;
+    align-items: center;
+    padding: clamp(2rem, 5vw, 4rem);
+    border-radius: var(--radius-lg);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(139, 41, 66, 0.22),
+            rgba(42, 38, 34, 0.98)
+        );
+    box-shadow: var(--shadow-pronounced);
+}
+
+.home-hero-content {
+    max-width: 780px;
+}
+
+.home-eyebrow {
+    display: inline-flex;
+    margin-bottom: 1rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: var(--radius-pill);
+    background-color: rgba(139, 41, 66, 0.20);
+    border: 1px solid var(--border-primary);
+    color: var(--color-primary-light);
+    font-weight: 700;
+}
+
+.home-stats {
+    display: grid;
+    gap: 1rem;
+}
+
+.home-stats div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.home-stats strong {
+    color: var(--text-primary);
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.home-stats span {
+    color: var(--text-secondary);
+    font-weight: 650;
+}
+
+.home-section-heading,
+.home-cta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.home-section-heading .page-copy,
+.home-cta .page-copy {
+    margin-bottom: 0;
+}
+
+.home-cta {
+    align-items: center;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(42, 38, 34, 1),
+            rgba(139, 41, 66, 0.16)
+        );
+}
+
 .auth-layout-wide {
     max-width: 640px;
 }
@@ -424,6 +511,10 @@
 }
 
 @media (max-width: 900px) {
+    .home-hero {
+        grid-template-columns: 1fr;
+    }
+
     .catalog-filter-form .form-row,
     .film-detail {
         grid-template-columns: 1fr;
@@ -431,6 +522,16 @@
 }
 
 @media (max-width: 700px) {
+    .home-hero,
+    .home-cta {
+        padding: 1.5rem;
+    }
+
+    .home-section-heading,
+    .home-cta {
+        flex-direction: column;
+    }
+
     .film-grid {
         grid-template-columns: 1fr;
     }
@@ -460,7 +561,7 @@
 }
 
 .ranking-position {
-    color: var(--text-primary-invert);
+    color: var(--text-primary);
     font-weight: 700;
     font-size: 0.9rem;
 }

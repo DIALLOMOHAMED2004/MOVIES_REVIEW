@@ -31,6 +31,22 @@ def _film_detail_queryset():
     )
 
 
+def _films_mieux_notes(limit):
+    return (
+        Film.objects.select_related("genre")
+        .filter(note_moyenne__isnull=False, nombre_critiques__gt=0)
+        .order_by("-note_moyenne", "-nombre_critiques", "titre")[:limit]
+    )
+
+
+def _films_populaires(limit):
+    return (
+        Film.objects.select_related("genre")
+        .filter(nombre_critiques__gt=0)
+        .order_by("-nombre_critiques", "-note_moyenne", "titre")[:limit]
+    )
+
+
 def _prepare_comment_forms(critiques, user, bound_form=None, target_id=None):
     if not user.is_authenticated:
         return
@@ -43,9 +59,19 @@ def _prepare_comment_forms(critiques, user, bound_form=None, target_id=None):
 
 
 class HomeView(TemplateView):
-    """Page d'accueil minimale utilisée par les redirections du projet."""
+    """Page d'accueil avec films populaires et films les mieux notés."""
 
     template_name = "movies/home.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            "films_populaires": _films_populaires(4),
+            "films_mieux_notes": _films_mieux_notes(4),
+            "nombre_films": Film.objects.count(),
+            "nombre_critiques": Critique.objects.count(),
+        })
+        return context
 
 
 class MovieListView(TemplateView):
@@ -159,28 +185,8 @@ class RankingView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Requête de base avec optimisation select_related
-        films_base = Film.objects.select_related("genre")
-        
-        # Classement des films les mieux notés
-        # Filtrer : note moyenne non nulle + au moins 1 critique
-        films_mieux_notes = (
-            films_base
-            .filter(note_moyenne__isnull=False, nombre_critiques__gt=0)
-            .order_by("-note_moyenne", "-nombre_critiques", "titre")[:20]
-        )
-        
-        # Classement des films les plus populaires
-        # Filtrer : au moins 1 critique
-        films_populaires = (
-            films_base
-            .filter(nombre_critiques__gt=0)
-            .order_by("-nombre_critiques", "-note_moyenne", "titre")[:20]
-        )
-        
         context.update({
-            "films_mieux_notes": films_mieux_notes,
-            "films_populaires": films_populaires,
+            "films_mieux_notes": _films_mieux_notes(20),
+            "films_populaires": _films_populaires(20),
         })
         return context

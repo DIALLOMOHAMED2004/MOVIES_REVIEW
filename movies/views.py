@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, TemplateView
 
-from .forms import CommentForm
+from .forms import CommentForm, ReviewForm
 from .models import Commentaire, Critique, Film, Genre
 
 
@@ -27,7 +27,8 @@ def _critique_queryset():
 
 def _film_detail_queryset():
     return Film.objects.select_related("genre").prefetch_related(
-        Prefetch("critiques", queryset=_critique_queryset())
+        "acteurs",
+        Prefetch("critiques", queryset=_critique_queryset()),
     )
 
 
@@ -56,6 +57,36 @@ def _prepare_comment_forms(critiques, user, bound_form=None, target_id=None):
             critique.comment_form = bound_form
         else:
             critique.comment_form = CommentForm(auto_id=f"id_%s_{critique.pk}")
+
+
+def _detail_url(film_id, critique_id=None):
+    url = reverse("movies:film_detail", args=[film_id])
+    if critique_id:
+        return f"{url}#critique-{critique_id}"
+    return url
+
+
+def _user_review_from_critiques(critiques, user):
+    if not user.is_authenticated:
+        return None
+    return next(
+        (
+            critique
+            for critique in critiques
+            if critique.utilisateur_id == user.id
+        ),
+        None,
+    )
+
+
+def _review_form_context(film, form, form_title, submit_label, critique=None):
+    return {
+        "film": film,
+        "form": form,
+        "critique": critique,
+        "form_title": form_title,
+        "submit_label": submit_label,
+    }
 
 
 class HomeView(TemplateView):
@@ -141,7 +172,116 @@ class FilmDetailView(DetailView):
         critiques = list(self.object.critiques.all())
         _prepare_comment_forms(critiques, self.request.user)
         context["critiques"] = critiques
+        context["user_review"] = _user_review_from_critiques(
+            critiques,
+            self.request.user,
+        )
         return context
+
+
+@login_required
+def review_create(request, film_id):
+    """Publie une critique unique pour le film visé."""
+
+    film = get_object_or_404(
+        Film.objects.select_related("genre").prefetch_related("acteurs"),
+        pk=film_id,
+    )
+    existing_review = Critique.objects.filter(
+        film=film,
+        utilisateur=request.user,
+    ).first()
+
+    if existing_review:
+        messages.info(
+            request,
+            "Vous avez déjà publié une critique pour ce film.",
+        )
+        return redirect(_detail_url(film.pk, existing_review.pk))
+
+    if request.method == "POST":
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            critique = form.save(commit=False)
+            critique.film = film
+            critique.utilisateur = request.user
+            critique.save()
+            messages.success(request, "Votre critique a été publiée.")
+            return redirect(_detail_url(film.pk, critique.pk))
+    else:
+        form = ReviewForm()
+
+    return render(
+        request,
+        "movies/review_form.html",
+        _review_form_context(
+            film,
+            form,
+            "Publier une critique",
+            "Publier ma critique",
+        ),
+    )
+
+
+@login_required
+def review_update(request, critique_id):
+    """Modifie une critique appartenant à l'utilisateur connecté."""
+
+    critique = get_object_or_404(
+        Critique.objects.select_related("film__genre", "utilisateur")
+        .prefetch_related("film__acteurs"),
+        pk=critique_id,
+        utilisateur=request.user,
+    )
+    film = critique.film
+
+    if request.method == "POST":
+        form = ReviewForm(request.POST, instance=critique)
+        if form.is_valid():
+            critique = form.save()
+            messages.success(request, "Votre critique a été mise à jour.")
+            return redirect(_detail_url(film.pk, critique.pk))
+    else:
+        form = ReviewForm(instance=critique)
+
+    return render(
+        request,
+        "movies/review_form.html",
+        _review_form_context(
+            film,
+            form,
+            "Modifier ma critique",
+            "Enregistrer les modifications",
+            critique,
+        ),
+    )
+
+
+@login_required
+def review_delete(request, critique_id):
+    """Confirme puis supprime une critique appartenant à l'utilisateur."""
+
+    critique = get_object_or_404(
+        Critique.objects.select_related("film__genre", "utilisateur")
+        .prefetch_related("film__acteurs"),
+        pk=critique_id,
+        utilisateur=request.user,
+    )
+    film = critique.film
+
+    if request.method == "POST":
+        critique.delete()
+        messages.success(request, "Votre critique a été supprimée.")
+        return redirect(_detail_url(film.pk))
+
+    return render(
+        request,
+        "movies/review_confirm_delete.html",
+        {
+            "film": film,
+            "critique": critique,
+        },
+    )
 
 
 @login_required
@@ -170,7 +310,11 @@ def ajouter_commentaire(request, critique_id):
     return render(
         request,
         "movies/movie_detail.html",
-        {"film": film, "critiques": critiques},
+        {
+            "film": film,
+            "critiques": critiques,
+            "user_review": _user_review_from_critiques(critiques, request.user),
+        },
     )
 
 

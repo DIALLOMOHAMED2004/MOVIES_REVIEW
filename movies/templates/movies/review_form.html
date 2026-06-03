@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form_title }} - {{ film.titre }} - Movie Review{% endblock %}
+
+{% block content %}
+<section class="catalog-page review-form-page">
+    <div class="page-header">
+        <a href="{% url 'movies:film_detail' film.pk %}" class="btn btn-secondary btn-sm">Retour au film</a>
+        <div>
+            <h1>{{ form_title }}</h1>
+            <p class="page-copy">Partagez votre analyse et attribuez une note à {{ film.titre }}.</p>
+        </div>
+    </div>
+
+    <article class="review-form-layout">
+        <aside class="film-context card card-soft">
+            <div class="film-context-poster">
+                {% if film.affiche %}
+                    <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+                {% else %}
+                    <div class="film-card-placeholder">
+                        <span>Aucune affiche</span>
+                    </div>
+                {% endif %}
+            </div>
+            <div>
+                <h2>{{ film.titre }}</h2>
+                <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+                {% if critique %}
+                    <p class="text-muted">Publiée le {{ critique.date_publication|date:"d/m/Y à H:i" }}</p>
+                {% endif %}
+            </div>
+        </aside>
+
+        <form method="post" class="review-form card" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors form-errors-global">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-stack">
+                <div class="form-group">
+                    <label for="{{ form.titre.id_for_label }}" class="form-label">{{ form.titre.label }}</label>
+                    {{ form.titre }}
+                    {% if form.titre.help_text %}
+                        <p class="field-help">{{ form.titre.help_text }}</p>
+                    {% endif %}
+                    {% if form.titre.errors %}
+                        <div class="form-errors">{{ form.titre.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.texte.id_for_label }}" class="form-label">{{ form.texte.label }}</label>
+                    {{ form.texte }}
+                    {% if form.texte.help_text %}
+                        <p class="field-help">{{ form.texte.help_text }}</p>
+                    {% endif %}
+                    {% if form.texte.errors %}
+                        <div class="form-errors">{{ form.texte.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.note.id_for_label }}" class="form-label">{{ form.note.label }}</label>
+                    {{ form.note }}
+                    {% if form.note.help_text %}
+                        <p class="field-help">{{ form.note.help_text }}</p>
+                    {% endif %}
+                    {% if form.note.errors %}
+                        <div class="form-errors">{{ form.note.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+                    <a href="{% url 'movies:film_detail' film.pk %}" class="btn btn-secondary">Annuler</a>
+                </div>
+            </div>
+        </form>
+    </article>
+</section>
+{% endblock %}

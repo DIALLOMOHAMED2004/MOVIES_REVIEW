@@ -27,6 +27,48 @@
                 <h2>Synopsis</h2>
                 <p>{{ film.synopsis }}</p>
             </div>
+            <div class="film-casting">
+                <h2>Casting principal</h2>
+                {% if film.acteurs.all %}
+                    <p>
+                        {% for acteur in film.acteurs.all %}
+                            {{ acteur.nom }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                {% else %}
+                    <p class="text-muted">Aucun acteur renseigné.</p>
+                {% endif %}
+            </div>
+            <div class="review-cta surface-highlight">
+                {% if user.is_authenticated %}
+                    {% if user_review %}
+                        <p>Vous avez déjà publié une critique.</p>
+                        <div class="review-actions">
+                            <a href="{% url 'movies:review_update' user_review.pk %}" class="btn btn-primary btn-sm">
+                                Modifier ma critique
+                            </a>
+                            <a href="{% url 'movies:review_delete' user_review.pk %}" class="btn btn-secondary btn-sm">
+                                Supprimer ma critique
+                            </a>
+                        </div>
+                    {% else %}
+                        <p>Partagez votre avis avec la communauté.</p>
+                        <a href="{% url 'movies:review_create' film.pk %}" class="btn btn-primary btn-sm">
+                            Ajouter une critique
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <p>Connectez-vous ou créez un compte pour publier une critique.</p>
+                    <div class="review-actions">
+                        <a href="{% url 'accounts:connexion' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-primary btn-sm">
+                            Connexion
+                        </a>
+                        <a href="{% url 'accounts:inscription' %}" class="btn btn-secondary btn-sm">
+                            Inscription
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </article>
 
@@ -51,6 +93,17 @@
                         </header>
 
                         <p class="review-text">{{ critique.texte }}</p>
+
+                        {% if user == critique.utilisateur %}
+                            <div class="review-actions review-card-actions">
+                                <a href="{% url 'movies:review_update' critique.pk %}" class="btn btn-primary btn-sm">
+                                    Modifier
+                                </a>
+                                <a href="{% url 'movies:review_delete' critique.pk %}" class="btn btn-secondary btn-sm">
+                                    Supprimer
+                                </a>
+                            </div>
+                        {% endif %}
 
                         <section class="comments" aria-label="Commentaires de la critique {{ critique.titre }}">
                             <h4>Commentaires</h4>

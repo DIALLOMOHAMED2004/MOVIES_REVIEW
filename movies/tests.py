@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Commentaire, Critique, Film, Genre
+from .models import Acteur, Commentaire, Critique, Film, Genre
 
 
 User = get_user_model()
@@ -294,6 +294,277 @@ class MovieListViewTests(TestCase):
         response = self.client.get(reverse("movies:films"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("movies:film_detail", args=[self.film_note.pk]))
+
+
+class Phase4ReviewTests(TestCase):
+    """Vérifie le détail film et le cycle de vie des critiques."""
+
+    def setUp(self):
+        self.auteur = User.objects.create_user(
+            username="auteur_phase4",
+            password="Motdepasse123!",
+        )
+        self.visiteur = User.objects.create_user(
+            username="visiteur_phase4",
+            password="Motdepasse123!",
+        )
+        self.autre_utilisateur = User.objects.create_user(
+            username="autre_phase4",
+            password="Motdepasse123!",
+        )
+        self.genre = Genre.objects.create(nom="Thriller")
+        self.film = Film.objects.create(
+            titre="Nuit rouge",
+            synopsis="Une enquête nocturne dans une ville sous tension.",
+            genre=self.genre,
+            date_sortie=date(2025, 2, 14),
+            duree_minutes=112,
+        )
+        self.autre_film = Film.objects.create(
+            titre="Autre cible",
+            synopsis="Un autre film pour vérifier les associations serveur.",
+            genre=self.genre,
+            date_sortie=date(2024, 2, 14),
+            duree_minutes=98,
+        )
+        self.acteur = Acteur.objects.create(nom="Camille Durand")
+        self.film.acteurs.add(self.acteur)
+        self.critique = Critique.objects.create(
+            film=self.film,
+            utilisateur=self.auteur,
+            titre="Tension maîtrisée",
+            texte="Une critique existante pour la page détail.",
+            note=4,
+        )
+        self.commentaire = Commentaire.objects.create(
+            critique=self.critique,
+            utilisateur=self.visiteur,
+            texte="Ce commentaire doit rester visible.",
+        )
+        self.detail_url = reverse("movies:film_detail", args=[self.film.pk])
+        self.create_url = reverse("movies:review_create", args=[self.film.pk])
+        self.update_url = reverse("movies:review_update", args=[self.critique.pk])
+        self.delete_url = reverse("movies:review_delete", args=[self.critique.pk])
+
+    def test_detail_page_displays_movie_review_and_comment_data(self):
+        response = self.client.get(self.detail_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nuit rouge")
+        self.assertContains(response, "Une enquête nocturne")
+        self.assertContains(response, "Thriller")
+        self.assertContains(response, "Camille Durand")
+        self.assertContains(response, "Tension maîtrisée")
+        self.assertContains(response, "Ce commentaire doit rester visible.")
+
+    def test_detail_invites_anonymous_user_to_login_or_register(self):
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, "Connectez-vous")
+        self.assertContains(response, reverse("accounts:connexion"))
+        self.assertContains(response, reverse("accounts:inscription"))
+
+    def test_detail_shows_add_review_button_for_user_without_review(self):
+        self.client.force_login(self.visiteur)
+
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, "Ajouter une critique")
+        self.assertContains(response, self.create_url)
+
+    def test_detail_shows_edit_review_button_for_review_author(self):
+        self.client.force_login(self.auteur)
+
+        response = self.client.get(self.detail_url)
+
+        self.assertContains(response, "Vous avez déjà publié une critique")
+        self.assertContains(response, "Modifier ma critique")
+        self.assertContains(response, self.update_url)
+
+    def test_authenticated_user_can_create_review(self):
+        self.client.force_login(self.visiteur)
+
+        response = self.client.post(
+            self.create_url,
+            {
+                "titre": "Avis personnel",
+                "texte": "Une analyse publiée par un utilisateur connecté.",
+                "note": "5",
+            },
+        )
+
+        critique = Critique.objects.get(titre="Avis personnel")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(critique.film, self.film)
+        self.assertEqual(critique.utilisateur, self.visiteur)
+        self.assertEqual(response["Location"], f"{self.detail_url}#critique-{critique.pk}")
+
+    def test_anonymous_user_is_redirected_from_create_review(self):
+        response = self.client.post(
+            self.create_url,
+            {
+                "titre": "Tentative anonyme",
+                "texte": "Cette critique ne doit pas être créée.",
+                "note": "3",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f"{reverse('accounts:connexion')}?next={self.create_url}",
+        )
+        self.assertFalse(Critique.objects.filter(titre="Tentative anonyme").exists())
+
+    def test_forged_film_and_user_values_are_ignored_on_create(self):
+        self.client.force_login(self.visiteur)
+
+        self.client.post(
+            self.create_url,
+            {
+                "titre": "Associations protégées",
+                "texte": "Le serveur impose le film et l'utilisateur.",
+                "note": "4",
+                "film": self.autre_film.pk,
+                "utilisateur": self.autre_utilisateur.pk,
+            },
+        )
+
+        critique = Critique.objects.get(titre="Associations protégées")
+        self.assertEqual(critique.film, self.film)
+        self.assertEqual(critique.utilisateur, self.visiteur)
+
+    def test_user_cannot_create_two_reviews_for_same_movie(self):
+        self.client.force_login(self.auteur)
+
+        response = self.client.post(
+            self.create_url,
+            {
+                "titre": "Doublon",
+                "texte": "Cette critique ne doit pas être créée.",
+                "note": "5",
+            },
+            follow=True,
+        )
+
+        self.assertRedirects(response, f"{self.detail_url}#critique-{self.critique.pk}")
+        self.assertContains(response, "Vous avez déjà publié une critique pour ce film.")
+        self.assertFalse(Critique.objects.filter(titre="Doublon").exists())
+
+    def test_create_review_updates_movie_statistics(self):
+        self.client.force_login(self.visiteur)
+
+        self.client.post(
+            self.create_url,
+            {
+                "titre": "Nouvelle note",
+                "texte": "Une critique qui change la moyenne.",
+                "note": "2",
+            },
+        )
+
+        self.film.refresh_from_db()
+        self.assertEqual(self.film.nombre_critiques, 2)
+        self.assertEqual(self.film.note_moyenne, Decimal("3.00"))
+
+    def test_author_can_update_review(self):
+        self.client.force_login(self.auteur)
+
+        response = self.client.post(
+            self.update_url,
+            {
+                "titre": "Titre modifié",
+                "texte": "Texte modifié par l'auteur.",
+                "note": "5",
+            },
+        )
+
+        self.critique.refresh_from_db()
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.critique.titre, "Titre modifié")
+        self.assertEqual(response["Location"], f"{self.detail_url}#critique-{self.critique.pk}")
+
+    def test_other_user_cannot_update_review(self):
+        self.client.force_login(self.visiteur)
+
+        response = self.client.post(
+            self.update_url,
+            {
+                "titre": "Modification interdite",
+                "texte": "Cette modification ne doit pas passer.",
+                "note": "1",
+            },
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.critique.refresh_from_db()
+        self.assertEqual(self.critique.titre, "Tension maîtrisée")
+
+    def test_update_review_note_updates_movie_statistics_and_message(self):
+        self.client.force_login(self.auteur)
+
+        response = self.client.post(
+            self.update_url,
+            {
+                "titre": "Tension maîtrisée",
+                "texte": "Une critique existante pour la page détail.",
+                "note": "2",
+            },
+            follow=True,
+        )
+
+        self.film.refresh_from_db()
+        self.assertEqual(self.film.note_moyenne, Decimal("2.00"))
+        self.assertContains(response, "Votre critique a été mise à jour.")
+
+    def test_author_can_access_delete_confirmation(self):
+        self.client.force_login(self.auteur)
+
+        response = self.client.get(self.delete_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Confirmer la suppression")
+        self.assertContains(response, "Supprimer définitivement")
+
+    def test_author_can_delete_review_with_post(self):
+        self.client.force_login(self.auteur)
+
+        response = self.client.post(self.delete_url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Critique.objects.filter(pk=self.critique.pk).exists())
+
+    def test_other_user_cannot_delete_review(self):
+        self.client.force_login(self.visiteur)
+
+        response = self.client.post(self.delete_url)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Critique.objects.filter(pk=self.critique.pk).exists())
+
+    def test_get_delete_confirmation_does_not_delete_review(self):
+        self.client.force_login(self.auteur)
+
+        response = self.client.get(self.delete_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Critique.objects.filter(pk=self.critique.pk).exists())
+
+    def test_delete_review_updates_movie_statistics_and_message(self):
+        Critique.objects.create(
+            film=self.film,
+            utilisateur=self.visiteur,
+            titre="Deuxième avis",
+            texte="Une deuxième critique pour vérifier la moyenne.",
+            note=2,
+        )
+        self.client.force_login(self.auteur)
+
+        response = self.client.post(self.delete_url, follow=True)
+
+        self.film.refresh_from_db()
+        self.assertEqual(self.film.nombre_critiques, 1)
+        self.assertEqual(self.film.note_moyenne, Decimal("2.00"))
+        self.assertContains(response, "Votre critique a été supprimée.")
 
 
 class CommentairePhase5Tests(TestCase):

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Supprimer ma critique - {{ film.titre }} - Movie Review{% endblock %}
+
+{% block content %}
+<section class="catalog-page delete-review-page">
+    <div class="page-header">
+        <a href="{% url 'movies:film_detail' film.pk %}#critique-{{ critique.pk }}" class="btn btn-secondary btn-sm">
+            Retour au film
+        </a>
+        <div>
+            <h1>Confirmer la suppression</h1>
+            <p class="page-copy">Cette action supprimera définitivement votre critique et ses commentaires.</p>
+        </div>
+    </div>
+
+    <article class="delete-confirmation card">
+        <section class="film-context card-soft">
+            <div class="film-context-poster">
+                {% if film.affiche %}
+                    <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+                {% else %}
+                    <div class="film-card-placeholder">
+                        <span>Aucune affiche</span>
+                    </div>
+                {% endif %}
+            </div>
+            <div>
+                <h2>{{ film.titre }}</h2>
+                <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+            </div>
+        </section>
+
+        <section class="review-delete-preview">
+            <h2>{{ critique.titre }}</h2>
+            <p class="film-rating">{{ critique.note }}/5</p>
+            <p class="review-meta">Publiée le {{ critique.date_publication|date:"d/m/Y à H:i" }}</p>
+            <p class="review-text">{{ critique.texte|truncatewords:45 }}</p>
+        </section>
+
+        <div class="delete-warning">
+            Attention : cette suppression est irréversible. La critique et tous ses commentaires seront définitivement supprimés.
+        </div>
+
+        <form method="post" class="form-actions">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-danger">Supprimer définitivement</button>
+            <a href="{% url 'movies:film_detail' film.pk %}#critique-{{ critique.pk }}" class="btn btn-secondary">
+                Annuler
+            </a>
+        </form>
+    </article>
+</section>
+{% endblock %}

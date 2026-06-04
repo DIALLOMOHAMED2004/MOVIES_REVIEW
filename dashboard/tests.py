@@ -19,6 +19,13 @@ class DashboardAccessTests(TestCase):
             email="user@example.com",
             password="password",
         )
+        self.superuser = User.objects.create_user(
+            username="superuser",
+            email="superuser@example.com",
+            password="password",
+            is_staff=False,
+            is_superuser=True,
+        )
 
     def test_anonymous_user_is_redirected_from_dashboard(self):
         response = self.client.get(reverse("dashboard:home"))
@@ -42,6 +49,16 @@ class DashboardAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Dashboard administrateur")
+
+    def test_superuser_can_access_dashboard_and_see_link(self):
+        self.client.force_login(self.superuser)
+
+        dashboard_response = self.client.get(reverse("dashboard:home"))
+        home_response = self.client.get(reverse("movies:accueil"))
+
+        self.assertEqual(dashboard_response.status_code, 200)
+        self.assertContains(home_response, reverse("dashboard:home"))
+        self.assertContains(home_response, "Dashboard")
 
     def test_normal_user_cannot_access_sensitive_dashboard_url(self):
         self.client.force_login(self.user)
@@ -310,6 +327,15 @@ class DashboardFunctionalTests(TestCase):
 
         self.assertRedirects(response, reverse("dashboard:critique_list"))
         self.assertFalse(Critique.objects.filter(pk=self.critique.pk).exists())
+
+    def test_review_delete_confirmation_get_does_not_delete(self):
+        response = self.client.get(
+            reverse("dashboard:critique_delete", args=[self.critique.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Critique.objects.filter(pk=self.critique.pk).exists())
+        self.assertContains(response, "Supprimer la critique")
 
     def test_review_delete_updates_movie_statistics(self):
         self.assertEqual(self.film.nombre_critiques, 1)

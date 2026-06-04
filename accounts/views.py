@@ -97,7 +97,11 @@ class ProfileView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        context["review_count"] = user.critiques.count()
+        reviews = list(
+            user.critiques.select_related("film__genre").order_by("-date_publication")
+        )
+        context["reviews"] = reviews
+        context["review_count"] = len(reviews)
         context["comment_count"] = user.commentaires.count()
         return context
 

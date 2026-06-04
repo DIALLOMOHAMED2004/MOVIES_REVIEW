@@ -42,13 +42,40 @@
         <h2>Mes Critiques</h2>
     </div>
 
-    <div class="empty-state">
-        <h3>Aucune critique publiée</h3>
-        <p>
-            Vous n'avez pas encore publié de critique. Explorez le catalogue
-            et partagez votre premier avis !
-        </p>
-        <a href="{% url 'movies:films' %}" class="btn btn-secondary">Explorer les Films</a>
-    </div>
+    {% if reviews %}
+        <div class="review-list">
+            {% for critique in reviews %}
+                <article class="review-card card">
+                    <header class="review-header">
+                        <div>
+                            <h3>{{ critique.titre }}</h3>
+                            <p class="review-meta">
+                                {{ critique.film.titre }} · {{ critique.film.genre.nom }} ·
+                                publiée le {{ critique.date_publication|date:"d/m/Y à H:i" }}
+                            </p>
+                        </div>
+                        <span class="badge badge-bronze">{{ critique.note }}/5</span>
+                    </header>
+
+                    <p class="review-text">{{ critique.texte|truncatewords:45 }}</p>
+
+                    <div class="review-actions">
+                        <a href="{% url 'movies:film_detail' critique.film.pk %}#critique-{{ critique.pk }}" class="btn btn-secondary btn-sm">Voir le film</a>
+                        <a href="{% url 'movies:review_update' critique.pk %}" class="btn btn-primary btn-sm">Modifier</a>
+                        <a href="{% url 'movies:review_delete' critique.pk %}" class="btn btn-secondary btn-sm">Supprimer</a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h3>Aucune critique publiée</h3>
+            <p>
+                Vous n'avez pas encore publié de critique. Explorez le catalogue
+                et partagez votre premier avis !
+            </p>
+            <a href="{% url 'movies:films' %}" class="btn btn-secondary">Explorer les Films</a>
+        </div>
+    {% endif %}
 </section>
 {% endblock %}

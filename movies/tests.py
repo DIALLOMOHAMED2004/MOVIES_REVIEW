@@ -1,11 +1,12 @@
 from datetime import date
 from decimal import Decimal
 
+from django.contrib import admin as django_admin
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Acteur, Commentaire, Critique, Film, Genre
+from .models import Acteur, Casting, Commentaire, Critique, Film, Genre
 
 
 User = get_user_model()
@@ -731,3 +732,68 @@ class CommentairePhase5Tests(TestCase):
 
         self.assertContains(response, 'name="next"')
         self.assertContains(response, f'value="{next_target}"')
+
+
+class Phase8AdminTests(TestCase):
+    """Vérifie la configuration Admin et la suppression groupée des critiques."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.genre = Genre.objects.create(nom="Administration")
+        cls.film = Film.objects.create(
+            titre="Film administré",
+            synopsis="Film utilisé pour valider la consolidation Admin.",
+            genre=cls.genre,
+            date_sortie=date(2026, 1, 10),
+            duree_minutes=105,
+        )
+        cls.auteur_un = User.objects.create(username="admin_auteur_un")
+        cls.auteur_deux = User.objects.create(username="admin_auteur_deux")
+        cls.critique_un = Critique.objects.create(
+            film=cls.film,
+            utilisateur=cls.auteur_un,
+            titre="Avis à supprimer",
+            texte="Cette critique sera supprimée depuis l'administration.",
+            note=2,
+        )
+        cls.critique_deux = Critique.objects.create(
+            film=cls.film,
+            utilisateur=cls.auteur_deux,
+            titre="Avis conservé",
+            texte="Cette critique doit rester après la suppression groupée.",
+            note=4,
+        )
+
+    def test_important_models_and_admin_options_are_configured(self):
+        registry = django_admin.site._registry
+
+        self.assertIn(Casting, registry)
+        self.assertEqual(registry[Film].list_select_related, ("genre",))
+        self.assertEqual(
+            registry[Film].readonly_fields,
+            ("note_moyenne", "nombre_critiques"),
+        )
+        self.assertEqual(
+            registry[Critique].list_select_related,
+            ("film", "utilisateur"),
+        )
+        self.assertEqual(
+            registry[Commentaire].list_select_related,
+            ("utilisateur", "critique__film", "critique__utilisateur"),
+        )
+        self.assertIn("extrait", registry[Commentaire].list_display)
+        self.assertIn("film", registry[Commentaire].list_display)
+
+    def test_bulk_admin_review_delete_recalculates_movie_statistics(self):
+        critique_admin = django_admin.site._registry[Critique]
+
+        critique_admin.delete_queryset(
+            request=None,
+            queryset=Critique.objects.filter(pk=self.critique_un.pk),
+        )
+
+        self.film.refresh_from_db()
+        self.assertFalse(Critique.objects.filter(pk=self.critique_un.pk).exists())
+        self.assertTrue(Critique.objects.filter(pk=self.critique_deux.pk).exists())
+        self.assertEqual(self.film.nombre_critiques, 1)
+        self.assertEqual(self.film.note_moyenne, Decimal("4.00"))

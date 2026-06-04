@@ -1,9 +1,12 @@
 import re
+from datetime import date
 
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
+
+from movies.models import Critique, Film, Genre
 
 
 User = get_user_model()
@@ -246,6 +249,35 @@ class AccountsAuthTests(TestCase):
         self.assertContains(authenticated_response, "Profil")
         self.assertContains(authenticated_response, "Déconnexion")
         self.assertNotContains(authenticated_response, "Inscription")
+
+    def test_profile_displays_real_user_reviews_and_actions(self):
+        genre = Genre.objects.create(nom="Profil")
+        film = Film.objects.create(
+            titre="Film du profil",
+            synopsis="Film utilisé pour vérifier la liste des critiques.",
+            genre=genre,
+            date_sortie=date(2026, 2, 5),
+            duree_minutes=110,
+        )
+        critique = Critique.objects.create(
+            film=film,
+            utilisateur=self.user,
+            titre="Ma critique visible",
+            texte="Cette critique doit apparaître dans le profil utilisateur.",
+            note=5,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("accounts:profil"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["reviews"], [critique])
+        self.assertEqual(response.context["review_count"], 1)
+        self.assertContains(response, "Ma critique visible")
+        self.assertContains(response, "Film du profil")
+        self.assertContains(response, reverse("movies:review_update", args=[critique.pk]))
+        self.assertContains(response, reverse("movies:review_delete", args=[critique.pk]))
+        self.assertNotContains(response, "Aucune critique publiée")
 
     def _request_password_reset_email(self):
         response = self.client.post(

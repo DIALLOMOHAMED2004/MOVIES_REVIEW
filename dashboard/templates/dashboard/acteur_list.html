@@ -1,0 +1,41 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Acteurs - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<header class="page-header dashboard-page-actions">
+    <div>
+        <h1>Acteurs</h1>
+        <p class="page-copy">Les acteurs associés à un casting ne sont pas supprimés automatiquement.</p>
+    </div>
+    <a href="{% url 'dashboard:acteur_create' %}" class="btn btn-primary">Ajouter un acteur</a>
+</header>
+
+<div class="dashboard-table-wrapper card">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Films associés</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for acteur in acteurs %}
+                <tr>
+                    <td>{{ acteur.nom }}</td>
+                    <td>{{ acteur.nombre_castings }}</td>
+                    <td class="dashboard-actions">
+                        <a href="{% url 'dashboard:acteur_update' acteur.pk %}" class="btn btn-secondary btn-sm">Modifier</a>
+                        <a href="{% url 'dashboard:acteur_delete' acteur.pk %}" class="btn btn-primary btn-danger btn-sm">Supprimer</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">Aucun acteur.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

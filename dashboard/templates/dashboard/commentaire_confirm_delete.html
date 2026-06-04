@@ -1,0 +1,26 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Supprimer un commentaire - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<article class="delete-confirmation card">
+    <header>
+        <h1>Supprimer le commentaire</h1>
+        <p class="page-copy">Le GET affiche uniquement cette confirmation. La suppression nécessite une requête POST.</p>
+    </header>
+
+    <section class="dashboard-delete-details">
+        <p><strong>Auteur :</strong> {{ object.utilisateur.username }}</p>
+        <p><strong>Film :</strong> {{ object.critique.film.titre }}</p>
+        <p><strong>Critique liée :</strong> {{ object.critique.titre }}</p>
+        <p><strong>Auteur de la critique :</strong> {{ object.critique.utilisateur.username }}</p>
+        <p>{{ object.texte|truncatechars:240 }}</p>
+    </section>
+
+    <form method="post" class="form-actions">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-danger">Supprimer définitivement</button>
+        <a href="{% url 'dashboard:commentaire_list' %}" class="btn btn-secondary">Annuler</a>
+    </form>
+</article>
+{% endblock %}

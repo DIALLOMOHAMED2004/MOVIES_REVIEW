@@ -1,0 +1,41 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Genres - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<header class="page-header dashboard-page-actions">
+    <div>
+        <h1>Genres</h1>
+        <p class="page-copy">Les genres utilisés par des films ne peuvent pas être supprimés.</p>
+    </div>
+    <a href="{% url 'dashboard:genre_create' %}" class="btn btn-primary">Ajouter un genre</a>
+</header>
+
+<div class="dashboard-table-wrapper card">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Films associés</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for genre in genres %}
+                <tr>
+                    <td>{{ genre.nom }}</td>
+                    <td>{{ genre.nombre_films }}</td>
+                    <td class="dashboard-actions">
+                        <a href="{% url 'dashboard:genre_update' genre.pk %}" class="btn btn-secondary btn-sm">Modifier</a>
+                        <a href="{% url 'dashboard:genre_delete' genre.pk %}" class="btn btn-primary btn-danger btn-sm">Supprimer</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">Aucun genre.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Utilisateurs - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<header class="page-header">
+    <h1>Utilisateurs</h1>
+    <p class="page-copy">Consultation des comptes sans action sensible.</p>
+</header>
+
+<div class="dashboard-table-wrapper card">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Nom d'utilisateur</th>
+                <th>Email</th>
+                <th>Inscription</th>
+                <th>Critiques</th>
+                <th>Commentaires</th>
+                <th>Staff</th>
+                <th>Superuser</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for utilisateur in utilisateurs %}
+                <tr>
+                    <td>{{ utilisateur.username }}</td>
+                    <td>{{ utilisateur.email }}</td>
+                    <td>{{ utilisateur.date_joined }}</td>
+                    <td>{{ utilisateur.nombre_critiques }}</td>
+                    <td>{{ utilisateur.nombre_commentaires }}</td>
+                    <td>{{ utilisateur.is_staff|yesno:"Oui,Non" }}</td>
+                    <td>{{ utilisateur.is_superuser|yesno:"Oui,Non" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">Aucun utilisateur.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Films - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<header class="page-header dashboard-page-actions">
+    <div>
+        <h1>Films</h1>
+        <p class="page-copy">Gestion des films, affiches, genres et casting simple.</p>
+    </div>
+    <a href="{% url 'dashboard:film_create' %}" class="btn btn-primary">Ajouter un film</a>
+</header>
+
+<div class="dashboard-table-wrapper card">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Titre</th>
+                <th>Genre</th>
+                <th>Sortie</th>
+                <th>Note moyenne</th>
+                <th>Critiques</th>
+                <th>Acteurs</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for film in films %}
+                <tr>
+                    <td>{{ film.titre }}</td>
+                    <td>{{ film.genre.nom }}</td>
+                    <td>{{ film.date_sortie }}</td>
+                    <td>{{ film.afficher_note }}</td>
+                    <td>{{ film.nombre_critiques }}</td>
+                    <td>
+                        {% for acteur in film.acteurs.all %}
+                            {{ acteur.nom }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            Aucun acteur
+                        {% endfor %}
+                    </td>
+                    <td class="dashboard-actions">
+                        <a href="{% url 'dashboard:film_update' film.pk %}" class="btn btn-secondary btn-sm">Modifier</a>
+                        <a href="{% url 'dashboard:film_delete' film.pk %}" class="btn btn-primary btn-danger btn-sm">Supprimer</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">Aucun film.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -10,6 +10,9 @@
                 <a href="{% url 'movies:accueil' %}" class="nav-link {% if request.resolver_match.url_name == 'accueil' %}nav-link-active{% endif %}">Accueil</a>
                 <a href="{% url 'movies:films' %}" class="nav-link {% if request.resolver_match.url_name == 'films' %}nav-link-active{% endif %}">Films</a>
                 <a href="{% url 'movies:classement' %}" class="nav-link {% if request.resolver_match.url_name == 'classement' %}nav-link-active{% endif %}">Classement</a>
+                {% if user.is_authenticated and user.is_staff %}
+                    <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.namespace == 'dashboard' %}nav-link-active{% endif %}">Dashboard</a>
+                {% endif %}
             </div>
         </div>
 

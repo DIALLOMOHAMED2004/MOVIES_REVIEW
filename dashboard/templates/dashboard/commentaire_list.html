@@ -1,0 +1,45 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Commentaires - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<header class="page-header">
+    <h1>Commentaires</h1>
+    <p class="page-copy">Consultation et suppression des commentaires abusifs.</p>
+</header>
+
+<div class="dashboard-table-wrapper card">
+    <table class="dashboard-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Auteur</th>
+                <th>Film</th>
+                <th>Critique liée</th>
+                <th>Auteur de la critique</th>
+                <th>Extrait du commentaire</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for commentaire in commentaires %}
+                <tr>
+                    <td>{{ commentaire.date_publication }}</td>
+                    <td>{{ commentaire.utilisateur.username }}</td>
+                    <td>{{ commentaire.critique.film.titre }}</td>
+                    <td>{{ commentaire.critique.titre }}</td>
+                    <td>{{ commentaire.critique.utilisateur.username }}</td>
+                    <td>{{ commentaire.texte|truncatechars:120 }}</td>
+                    <td class="dashboard-actions">
+                        <a href="{% url 'dashboard:commentaire_delete' commentaire.pk %}" class="btn btn-primary btn-danger btn-sm">Supprimer</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7">Aucun commentaire.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

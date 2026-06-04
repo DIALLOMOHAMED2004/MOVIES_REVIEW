@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="dashboard-layout">
+    <aside class="dashboard-sidebar card card-soft" aria-label="Navigation dashboard">
+        <h2>Dashboard</h2>
+        <nav class="dashboard-nav">
+            <a href="{% url 'dashboard:home' %}" class="dashboard-nav-link {% if active_section == 'home' %}dashboard-nav-link-active{% endif %}">Vue d'ensemble</a>
+            <a href="{% url 'dashboard:film_list' %}" class="dashboard-nav-link {% if active_section == 'films' %}dashboard-nav-link-active{% endif %}">Films</a>
+            <a href="{% url 'dashboard:genre_list' %}" class="dashboard-nav-link {% if active_section == 'genres' %}dashboard-nav-link-active{% endif %}">Genres</a>
+            <a href="{% url 'dashboard:acteur_list' %}" class="dashboard-nav-link {% if active_section == 'acteurs' %}dashboard-nav-link-active{% endif %}">Acteurs</a>
+            <a href="{% url 'dashboard:critique_list' %}" class="dashboard-nav-link {% if active_section == 'critiques' %}dashboard-nav-link-active{% endif %}">Critiques</a>
+            <a href="{% url 'dashboard:commentaire_list' %}" class="dashboard-nav-link {% if active_section == 'commentaires' %}dashboard-nav-link-active{% endif %}">Commentaires</a>
+            <a href="{% url 'dashboard:user_list' %}" class="dashboard-nav-link {% if active_section == 'utilisateurs' %}dashboard-nav-link-active{% endif %}">Utilisateurs</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        {% block dashboard_content %}{% endblock %}
+    </div>
+</section>
+{% endblock %}

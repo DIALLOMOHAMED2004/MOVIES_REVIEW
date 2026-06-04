@@ -1,0 +1,42 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ page_title }} - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<header class="page-header dashboard-page-actions">
+    <div>
+        <h1>{{ page_title }}</h1>
+        {% if form_description %}
+            <p class="page-copy">{{ form_description }}</p>
+        {% endif %}
+    </div>
+</header>
+
+<form method="post" enctype="multipart/form-data" class="card dashboard-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="form-errors form-errors-global">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="form-stack">
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="field-help">{{ field.help_text }}</p>
+                {% endif %}
+                {% if field.errors %}
+                    <div class="form-errors">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+        <a href="{{ cancel_url }}" class="btn btn-secondary">Annuler</a>
+    </div>
+</form>
+{% endblock %}

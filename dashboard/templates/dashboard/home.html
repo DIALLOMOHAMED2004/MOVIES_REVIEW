@@ -1,0 +1,79 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Dashboard - Movie Review{% endblock %}
+
+{% block dashboard_content %}
+<header class="page-header">
+    <h1>Dashboard administrateur</h1>
+    <p class="page-copy">Vue d'ensemble de l'activité du site.</p>
+</header>
+
+<section class="dashboard-stats">
+    <article class="dashboard-stat-card card">
+        <span>Films</span>
+        <strong>{{ nombre_films }}</strong>
+    </article>
+    <article class="dashboard-stat-card card">
+        <span>Critiques</span>
+        <strong>{{ nombre_critiques }}</strong>
+    </article>
+    <article class="dashboard-stat-card card">
+        <span>Commentaires</span>
+        <strong>{{ nombre_commentaires }}</strong>
+    </article>
+    <article class="dashboard-stat-card card">
+        <span>Utilisateurs</span>
+        <strong>{{ nombre_utilisateurs }}</strong>
+    </article>
+</section>
+
+<section class="dashboard-grid">
+    <article class="card">
+        <h2>Dernières critiques</h2>
+        {% for critique in dernieres_critiques %}
+            <div class="dashboard-feed-item">
+                <strong>{{ critique.titre }}</strong>
+                <span>{{ critique.film.titre }} par {{ critique.utilisateur.username }} - {{ critique.note }}/5</span>
+            </div>
+        {% empty %}
+            <p class="dashboard-empty">Aucune critique publiée.</p>
+        {% endfor %}
+    </article>
+
+    <article class="card">
+        <h2>Derniers commentaires</h2>
+        {% for commentaire in derniers_commentaires %}
+            <div class="dashboard-feed-item">
+                <strong>{{ commentaire.utilisateur.username }} sur {{ commentaire.critique.film.titre }}</strong>
+                <span>{{ commentaire.texte|truncatechars:100 }}</span>
+            </div>
+        {% empty %}
+            <p class="dashboard-empty">Aucun commentaire publié.</p>
+        {% endfor %}
+    </article>
+
+    <article class="card">
+        <h2>Films les mieux notés</h2>
+        {% for film in films_mieux_notes %}
+            <div class="dashboard-feed-item">
+                <strong>{{ film.titre }}</strong>
+                <span>{{ film.afficher_note }} - {{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }}</span>
+            </div>
+        {% empty %}
+            <p class="dashboard-empty">Aucun film noté.</p>
+        {% endfor %}
+    </article>
+
+    <article class="card">
+        <h2>Films les plus populaires</h2>
+        {% for film in films_populaires %}
+            <div class="dashboard-feed-item">
+                <strong>{{ film.titre }}</strong>
+                <span>{{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }} - {{ film.afficher_note }}</span>
+            </div>
+        {% empty %}
+            <p class="dashboard-empty">Aucun film populaire.</p>
+        {% endfor %}
+    </article>
+</section>
+{% endblock %}

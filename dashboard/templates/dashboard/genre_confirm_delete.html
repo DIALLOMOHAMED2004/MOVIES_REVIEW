@@ -1,0 +1,24 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Supprimer un genre - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<article class="delete-confirmation card">
+    <header>
+        <h1>Supprimer le genre</h1>
+        <p class="page-copy">Confirmez la suppression de <strong>{{ object.nom }}</strong>.</p>
+    </header>
+
+    {% if object.films.exists %}
+        <div class="delete-warning">
+            Ce genre est encore utilisé par des films. La suppression sera refusée.
+        </div>
+    {% endif %}
+
+    <form method="post" class="form-actions">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-danger">Supprimer définitivement</button>
+        <a href="{% url 'dashboard:genre_list' %}" class="btn btn-secondary">Annuler</a>
+    </form>
+</article>
+{% endblock %}

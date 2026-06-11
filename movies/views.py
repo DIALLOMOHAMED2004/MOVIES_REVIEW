@@ -57,7 +57,7 @@ from django.contrib.auth.decorators import login_required
 # Prefetch permet de personnaliser finement les préchargements de relations.
 # Il est particulièrement utile ici pour charger les commentaires avec leurs
 # utilisateurs en une requête optimisée.
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 
 # Fonctions de raccourci Django :
 # - get_object_or_404 : récupère un objet ou renvoie automatiquement une 404 ;
@@ -536,14 +536,15 @@ class HomeView(TemplateView):
 # selon plusieurs critères présents dans la query string :
 # - genre ;
 # - année de sortie ;
-# - note minimale.
+# - note minimale ;
+# - recherche textuelle simple.
 #
 # Exemple d'URL possible :
-# /films/?genre=1&annee=2024&note_min=4
+# /films/?q=Action&genre=1&annee=2024&note_min=4
 
 
 class MovieListView(TemplateView):
-    """Catalogue de films avec filtres par genre, année et note minimale."""
+    """Catalogue de films avec recherche et filtres."""
 
     # Template HTML du catalogue.
     template_name = "movies/movie_list.html"
@@ -565,7 +566,7 @@ class MovieListView(TemplateView):
             - les genres disponibles ;
             - les années disponibles ;
             - le nombre de films correspondant ;
-            - les valeurs de filtres conservées pour l'affichage du formulaire.
+            - les valeurs de recherche et filtres conservées pour l'affichage du formulaire.
 
         Validation des filtres
         ----------------------
@@ -586,8 +587,9 @@ class MovieListView(TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Queryset de départ : tous les films, avec le genre préchargé pour
-        # éviter des requêtes supplémentaires lors de l'affichage.
-        films = Film.objects.select_related("genre").all()
+        # éviter des requêtes supplémentaires lors de l'affichage. On précharge
+        # aussi les acteurs car la recherche peut interroger leur nom.
+        films = Film.objects.select_related("genre").prefetch_related("acteurs").all()
 
         # Liste des genres disponibles pour alimenter le formulaire de filtre.
         genres = Genre.objects.all()
@@ -607,6 +609,8 @@ class MovieListView(TemplateView):
         selected_genre = self.request.GET.get("genre", "").strip()
         selected_annee = self.request.GET.get("annee", "").strip()
         selected_note_min = self.request.GET.get("note_min", "").strip()
+        # Recherche texte simple
+        selected_q = self.request.GET.get("q", "").strip()
 
         # Application du filtre par genre uniquement si l'identifiant est valide.
         if selected_genre.isdigit() and int(selected_genre) in genre_ids:
@@ -638,6 +642,24 @@ class MovieListView(TemplateView):
                 # Réinitialisation de la valeur affichée si la note est invalide.
                 selected_note_min = ""
 
+        # Application de la recherche textuelle simple lorsque fournie.
+        # Recherche sur : titre, nom de genre, nom des acteurs, et année si la
+        # saisie ressemble à une année.
+        if selected_q:
+            # Construit un filtre OR sur les champs ciblés.
+            recherche_filter = (
+                Q(titre__icontains=selected_q)
+                | Q(genre__nom__icontains=selected_q)
+                | Q(acteurs__nom__icontains=selected_q)
+            )
+
+            if selected_q.isdigit() and len(selected_q) == 4:
+                recherche_filter |= Q(date_sortie__year=int(selected_q))
+
+            # Applique le filtre puis distinct() pour éviter les doublons
+            # si plusieurs acteurs correspondent ou plusieurs relations.
+            films = films.filter(recherche_filter).distinct()
+
         # Ajout des données nécessaires au template du catalogue.
         context.update({
             "films": films,
@@ -647,6 +669,7 @@ class MovieListView(TemplateView):
             "selected_genre": selected_genre,
             "selected_annee": selected_annee,
             "selected_note_min": selected_note_min,
+            "selected_q": selected_q,
         })
 
         return context

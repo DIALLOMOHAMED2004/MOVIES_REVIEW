@@ -141,6 +141,14 @@ class DashboardAccessTests(TestCase):
         # L'accès doit être interdit.
         self.assertEqual(response.status_code, 403)
 
+    def test_normal_user_cannot_access_movie_list(self):
+        # Vérifie que la liste des films reste protégée pour un utilisateur non staff.
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dashboard:film_list"))
+
+        self.assertEqual(response.status_code, 403)
+
     def test_dashboard_link_is_visible_for_staff_user(self):
         # Vérifie que le lien vers le dashboard est affiché
         # pour un utilisateur staff sur la page d'accueil publique.
@@ -452,6 +460,84 @@ class DashboardFunctionalTests(TestCase):
             set(response.context["critiques"]),
             {self.critique, other_review},
         )
+
+    def test_staff_can_access_movie_list(self):
+        response = self.client.get(reverse("dashboard:film_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Films")
+        self.assertContains(response, "Nuit rouge")
+        self.assertContains(response, '<input id="q" name="q" type="search"')
+        self.assertContains(response, '<select id="genre" name="genre" class="form-control">')
+        self.assertContains(response, '<select id="annee" name="annee" class="form-control">')
+
+    def test_movie_list_filters_by_title(self):
+        other_film = Film.objects.create(
+            titre="Aube froide",
+            synopsis="Un autre film.",
+            genre=self.genre,
+            date_sortie="2025-02-01",
+            duree_minutes=98,
+        )
+
+        response = self.client.get(reverse("dashboard:film_list"), {"q": "Nuit"})
+
+        self.assertEqual(list(response.context["films"]), [self.film])
+        self.assertContains(response, "Nuit rouge")
+        self.assertNotContains(response, "Aube froide")
+
+    def test_movie_list_filters_by_genre(self):
+        other_genre = Genre.objects.create(nom="Action")
+        other_film = Film.objects.create(
+            titre="Course finale",
+            synopsis="Un autre film.",
+            genre=other_genre,
+            date_sortie="2025-02-01",
+            duree_minutes=98,
+        )
+
+        response = self.client.get(
+            reverse("dashboard:film_list"),
+            {"genre": str(self.genre.pk)},
+        )
+
+        self.assertEqual(list(response.context["films"]), [self.film])
+        self.assertContains(response, "Nuit rouge")
+        self.assertNotContains(response, "Course finale")
+
+    def test_movie_list_filters_by_year(self):
+        other_film = Film.objects.create(
+            titre="Aube froide",
+            synopsis="Un autre film.",
+            genre=self.genre,
+            date_sortie="2025-02-01",
+            duree_minutes=98,
+        )
+
+        response = self.client.get(reverse("dashboard:film_list"), {"annee": "2024"})
+
+        self.assertEqual(list(response.context["films"]), [self.film])
+        self.assertContains(response, "Nuit rouge")
+        self.assertNotContains(response, "Aube froide")
+
+    def test_movie_list_combines_search_and_genre_filters(self):
+        other_genre = Genre.objects.create(nom="Action")
+        excluded_film = Film.objects.create(
+            titre="Nuit rapide",
+            synopsis="Un film d'action.",
+            genre=other_genre,
+            date_sortie="2024-03-01",
+            duree_minutes=100,
+        )
+
+        response = self.client.get(
+            reverse("dashboard:film_list"),
+            {"q": "Nuit", "genre": str(self.genre.pk)},
+        )
+
+        self.assertEqual(list(response.context["films"]), [self.film])
+        self.assertContains(response, "Nuit rouge")
+        self.assertNotContains(response, "Nuit rapide")
 
     def test_staff_can_add_movie_and_sync_casting(self):
         # Vérifie qu'un utilisateur staff peut créer un film

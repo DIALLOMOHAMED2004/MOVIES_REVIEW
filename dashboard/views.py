@@ -1,7 +1,9 @@
+from decimal import Decimal, InvalidOperation
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -150,6 +152,54 @@ class FilmListView(StaffRequiredMixin, DashboardContextMixin, ListView):
     active_section = "films"
 
     def get_queryset(self):
+        """
+        Construit et retourne le queryset des films à afficher dans la liste.
+
+        Rôle général
+        ------------
+        Cette méthode est utilisée par une vue basée sur une classe Django,
+        probablement une `ListView`, pour déterminer quels objets `Film` doivent
+        être affichés dans le catalogue.
+
+        Elle applique plusieurs traitements :
+        - optimisation des relations utilisées dans l'affichage ;
+        - recherche textuelle par mot-clé ;
+        - filtrage par genre ;
+        - filtrage par année de sortie ;
+        - filtrage par note minimale.
+
+        Entrées
+        -------
+        Les entrées proviennent de la query string HTTP, via `self.request.GET` :
+
+        - `q`
+            Terme de recherche libre.
+            Il peut correspondre au titre du film, au nom du genre, au nom d'un
+            acteur ou à une année si la valeur contient exactement 4 chiffres.
+
+        - `genre`
+            Identifiant du genre à filtrer.
+
+        - `annee`
+            Année de sortie à filtrer.
+
+        - `note_min`
+            Note minimale souhaitée, comprise entre 0 et 5.
+
+        Sortie
+        ------
+        QuerySet[Film]
+            Queryset Django contenant les films correspondant aux critères
+            valides envoyés par l'utilisateur.
+
+        Sécurité et robustesse
+        ----------------------
+        Les valeurs GET sont considérées comme non fiables. Elles sont donc
+        nettoyées avec `strip()` puis validées avant d'être utilisées dans les
+        filtres ORM.
+
+        Les filtres invalides sont ignorés plutôt que de provoquer une erreur.
+        """
         # Retourne la liste des films avec optimisation des relations.
         #
         # select_related("genre") récupère le genre du film dans la même requête SQL.
@@ -157,7 +207,164 @@ class FilmListView(StaffRequiredMixin, DashboardContextMixin, ListView):
         #
         # Cette optimisation est utile si le template affiche le genre et les acteurs
         # de chaque film.
-        return Film.objects.select_related("genre").prefetch_related("acteurs")
+        queryset = Film.objects.select_related("genre").prefetch_related("acteurs")
+
+        # Récupère le terme de recherche libre depuis l'URL.
+        # Exemple : ?q=matrix
+        #
+        # strip() supprime les espaces inutiles au début et à la fin afin d'éviter
+        # qu'une recherche comme "  matrix  " soit traitée différemment de "matrix".
+        q = self.request.GET.get("q", "").strip()
+
+        # Récupère l'identifiant du genre demandé dans les filtres.
+        # La valeur reste une chaîne à ce stade, car elle vient de l'URL.
+        genre = self.request.GET.get("genre", "").strip()
+
+        # Récupère l'année de sortie demandée.
+        # Elle sera validée avant conversion en entier.
+        annee = self.request.GET.get("annee", "").strip()
+
+        # Récupère la note minimale demandée.
+        # Elle sera convertie en Decimal uniquement si elle est présente.
+        note_min = self.request.GET.get("note_min", "").strip()
+
+        # --------------------------------------------------------------------
+        # Recherche textuelle globale
+        # --------------------------------------------------------------------
+        #
+        # Si l'utilisateur saisit un terme de recherche, la recherche porte sur :
+        # - le titre du film ;
+        # - le nom du genre ;
+        # - le nom des acteurs.
+        #
+        # Si le terme est une année à 4 chiffres, on ajoute aussi une recherche
+        # sur l'année de sortie.
+        if q:
+            # Construction d'un filtre OR avec Q.
+            # `icontains` effectue une recherche insensible à la casse.
+            recherche_filter = (
+                Q(titre__icontains=q)
+                | Q(genre__nom__icontains=q)
+                | Q(acteurs__nom__icontains=q)
+            )
+
+            # Cas particulier : si la recherche ressemble à une année,
+            # on ajoute un filtre sur l'année de sortie du film.
+            if q.isdigit() and len(q) == 4:
+                recherche_filter |= Q(date_sortie__year=int(q))
+
+            # distinct() évite les doublons lorsqu'un film possède plusieurs acteurs
+            # correspondant au terme de recherche.
+            queryset = queryset.filter(recherche_filter).distinct()
+
+        # --------------------------------------------------------------------
+        # Filtrage par genre
+        # --------------------------------------------------------------------
+        #
+        # On récupère d'abord les identifiants de genres existants afin de ne pas
+        # appliquer un filtre sur un identifiant inexistant ou invalide.
+        genre_ids = set(Genre.objects.values_list("id", flat=True))
+
+        # Le filtre est appliqué uniquement si la valeur est numérique et existe
+        # réellement dans la table des genres.
+        if genre.isdigit() and int(genre) in genre_ids:
+            queryset = queryset.filter(genre_id=int(genre))
+
+        # --------------------------------------------------------------------
+        # Filtrage par année
+        # --------------------------------------------------------------------
+        #
+        # On récupère les années réellement présentes en base afin d'ignorer les
+        # années qui ne correspondent à aucun film.
+        annees_valides = {
+            item.year for item in Film.objects.dates("date_sortie", "year", order="DESC")
+        }
+
+        # Le filtre est appliqué uniquement si l'année est numérique et existe
+        # dans les dates de sortie des films.
+        if annee.isdigit() and int(annee) in annees_valides:
+            queryset = queryset.filter(date_sortie__year=int(annee))
+
+        # --------------------------------------------------------------------
+        # Filtrage par note minimale
+        # --------------------------------------------------------------------
+        #
+        # La note minimale est optionnelle. Si elle est absente, aucun filtre de
+        # note n'est appliqué.
+        if note_min:
+            try:
+                # Decimal est utilisé au lieu de float pour éviter les imprécisions
+                # numériques lors de la comparaison des notes.
+                note_valeur = Decimal(note_min)
+            except (InvalidOperation, ValueError):
+                # En cas de valeur invalide, le filtre est simplement ignoré.
+                note_valeur = None
+
+            # Le filtre est appliqué uniquement si la note :
+            # - a bien été convertie ;
+            # - est un nombre fini ;
+            # - appartient à l'intervalle métier autorisé de 0 à 5.
+            if note_valeur is not None and note_valeur.is_finite() and Decimal("0") <= note_valeur <= Decimal("5"):
+                queryset = queryset.filter(note_moyenne__gte=note_valeur)
+
+        # Retourne le queryset final, éventuellement filtré par recherche,
+        # genre, année et note minimale.
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        """
+        Enrichit le contexte envoyé au template de la liste des films.
+
+        Rôle général
+        ------------
+        Cette méthode complète le contexte standard de la vue avec les données
+        nécessaires à l'affichage des filtres dans l'interface.
+
+        Elle permet notamment au template :
+        - de réafficher les valeurs actuellement saisies ou sélectionnées ;
+        - d'afficher la liste des genres disponibles ;
+        - d'afficher la liste des années disponibles.
+
+        Paramètres
+        ----------
+        **kwargs
+            Données transmises par la classe parente Django.
+
+        Sortie
+        ------
+        dict
+            Contexte enrichi utilisé par le template.
+
+        Point important
+        ---------------
+        Cette méthode ne filtre pas directement les films. Le filtrage principal
+        est fait dans `get_queryset()`. Ici, on prépare surtout les informations
+        utiles au formulaire de recherche/filtrage.
+        """
+        # Récupère le contexte standard fourni par la classe parente.
+        context = super().get_context_data(**kwargs)
+
+        # Stocke les valeurs actuelles des filtres.
+        # Cela permet au template de conserver les champs remplis après une recherche.
+        context["filtres"] = {
+            "q": self.request.GET.get("q", "").strip(),
+            "genre": self.request.GET.get("genre", "").strip(),
+            "annee": self.request.GET.get("annee", "").strip(),
+            "note_min": self.request.GET.get("note_min", "").strip(),
+        }
+
+        # Liste complète des genres disponibles pour alimenter un menu déroulant
+        # ou des boutons de filtre dans le template.
+        context["genres_filtre"] = Genre.objects.all()
+
+        # Liste des années de sortie disponibles dans la base.
+        # Elle sert à afficher un filtre par année cohérent avec les films existants.
+        context["annees_filtre"] = [
+            item.year for item in Film.objects.dates("date_sortie", "year", order="DESC")
+        ]
+
+        # Retourne le contexte final au template.
+        return context
 
 
 class FilmCreateView(StaffRequiredMixin, DashboardContextMixin, CreateView):

@@ -1,16 +1,32 @@
 <header class="site-header">
     <nav class="navbar">
         <div class="navbar-left">
+            <a href="{% url 'movies:accueil' %}" class="brand">
+                <span class="brand-mark">MR</span>
+                <span class="brand-text">Movie Review</span>
+            </a>
+
             <div class="nav-links">
-                <a href="{% url 'movies:accueil' %}" class="nav-link nav-link-active">Accueil</a>
-                <a href="{% url 'movies:films' %}" class="nav-link">Films</a>
-                <a href="{% url 'movies:classement' %}" class="nav-link">Classement</a>
+                <a href="{% url 'movies:accueil' %}" class="nav-link {% if request.resolver_match.url_name == 'accueil' %}nav-link-active{% endif %}">Accueil</a>
+                <a href="{% url 'movies:films' %}" class="nav-link {% if request.resolver_match.url_name == 'films' %}nav-link-active{% endif %}">Films</a>
+                <a href="{% url 'movies:classement' %}" class="nav-link {% if request.resolver_match.url_name == 'classement' %}nav-link-active{% endif %}">Classement</a>
+                {% if user.is_staff or user.is_superuser %}
+                    <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.namespace == 'dashboard' %}nav-link-active{% endif %}">Dashboard</a>
+                {% endif %}
             </div>
         </div>
 
         <div class="navbar-actions">
-            <a href="{% url 'accounts:connexion' %}" class="nav-auth-link">Connexion</a>
-            <a href="{% url 'accounts:inscription' %}" class="btn btn-primary btn-sm">Inscription</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profil' %}" class="nav-auth-link {% if request.resolver_match.url_name == 'profil' %}nav-link-active{% endif %}">Profil</a>
+                <form method="post" action="{% url 'accounts:deconnexion' %}" class="nav-logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-auth-link nav-button">Déconnexion</button>
+                </form>
+            {% else %}
+                <a href="{% url 'accounts:connexion' %}" class="nav-auth-link {% if request.resolver_match.url_name == 'connexion' %}nav-link-active{% endif %}">Connexion</a>
+                <a href="{% url 'accounts:inscription' %}" class="btn btn-primary btn-sm">Inscription</a>
+            {% endif %}
         </div>
     </nav>
 </header>

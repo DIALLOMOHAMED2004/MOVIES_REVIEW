@@ -49,6 +49,10 @@
     font-size: 0.95rem;
 }
 
+.btn-block {
+    width: 100%;
+}
+
 .card {
     background-color: var(--bg-container);
     border-radius: var(--radius-lg);
@@ -129,4 +133,87 @@
     background-color: var(--bg-soft-primary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-md);
+}
+
+.form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.form-label {
+    color: var(--text-primary);
+    font-weight: 650;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-container-secondary);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--border-primary);
+    box-shadow: 0 0 0 3px rgba(139, 41, 66, 0.18);
+}
+
+.field-help {
+    margin: 0;
+    color: var(--text-tertiary);
+    font-size: 0.92rem;
+}
+
+.form-errors {
+    color: #f0b7b7;
+    font-size: 0.92rem;
+}
+
+.form-errors ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.form-errors-global {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+    border-radius: var(--radius-sm);
+    background-color: rgba(139, 58, 58, 0.40);
+    border: 1px solid rgba(139, 58, 58, 0.70);
+}
+
+.form-section {
+    margin-top: 0.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+}
+
+.form-section h2 {
+    margin-bottom: 0;
+    font-size: 1.2rem;
+}
+
+.form-section h2 span {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
 }

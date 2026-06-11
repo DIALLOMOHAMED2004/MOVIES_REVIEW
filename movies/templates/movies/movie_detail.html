@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}{{ film.titre }} - Movie Review{% endblock %}
+
+{% block content %}
+<section class="catalog-page">
+    <div class="page-header">
+        <a href="{% url 'movies:films' %}" class="btn btn-secondary btn-sm">Retour au catalogue</a>
+        <h1>{{ film.titre }}</h1>
+    </div>
+
+    <article class="film-detail card">
+        <div class="film-detail-poster">
+            {% if film.affiche %}
+                <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+            {% else %}
+                <div class="film-card-placeholder">
+                    <span>Aucune affiche</span>
+                </div>
+            {% endif %}
+        </div>
+        <div class="film-detail-body">
+            <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+            <p class="film-rating">{{ film.afficher_note }}</p>
+            <p class="film-reviews">{{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }}</p>
+            <div class="film-synopsis">
+                <h2>Synopsis</h2>
+                <p>{{ film.synopsis }}</p>
+            </div>
+            <div class="film-casting">
+                <h2>Casting principal</h2>
+                {% if film.acteurs.all %}
+                    <p>
+                        {% for acteur in film.acteurs.all %}
+                            {{ acteur.nom }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                {% else %}
+                    <p class="text-muted">Aucun acteur renseigné.</p>
+                {% endif %}
+            </div>
+            <div class="review-cta surface-highlight">
+                {% if user.is_authenticated %}
+                    {% if user_review %}
+                        <p>Vous avez déjà publié une critique.</p>
+                        <div class="review-actions">
+                            <a href="{% url 'movies:review_update' user_review.pk %}" class="btn btn-primary btn-sm">
+                                Modifier ma critique
+                            </a>
+                            <a href="{% url 'movies:review_delete' user_review.pk %}" class="btn btn-secondary btn-sm">
+                                Supprimer ma critique
+                            </a>
+                        </div>
+                    {% else %}
+                        <p>Partagez votre avis avec la communauté.</p>
+                        <a href="{% url 'movies:review_create' film.pk %}" class="btn btn-primary btn-sm">
+                            Ajouter une critique
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <p>Connectez-vous ou créez un compte pour publier une critique.</p>
+                    <div class="review-actions">
+                        <a href="{% url 'accounts:connexion' %}?next={{ request.get_full_path|urlencode }}" class="btn btn-primary btn-sm">
+                            Connexion
+                        </a>
+                        <a href="{% url 'accounts:inscription' %}" class="btn btn-secondary btn-sm">
+                            Inscription
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+
+    <section class="reviews-section" aria-labelledby="reviews-title">
+        <div class="section-heading">
+            <h2 id="reviews-title">Critiques de la communauté</h2>
+        </div>
+
+        {% if critiques %}
+            <div class="review-list">
+                {% for critique in critiques %}
+                    <article class="review-card card" id="critique-{{ critique.pk }}">
+                        <header class="review-header">
+                            <div>
+                                <h3>{{ critique.titre }}</h3>
+                                <p class="review-meta">
+                                    Par {{ critique.utilisateur.username }} ·
+                                    {{ critique.date_publication|date:"d/m/Y à H:i" }}
+                                </p>
+                            </div>
+                            <span class="badge badge-bronze">{{ critique.note }}/5</span>
+                        </header>
+
+                        <p class="review-text">{{ critique.texte }}</p>
+
+                        {% if user == critique.utilisateur %}
+                            <div class="review-actions review-card-actions">
+                                <a href="{% url 'movies:review_update' critique.pk %}" class="btn btn-primary btn-sm">
+                                    Modifier
+                                </a>
+                                <a href="{% url 'movies:review_delete' critique.pk %}" class="btn btn-secondary btn-sm">
+                                    Supprimer
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        <section class="comments" aria-label="Commentaires de la critique {{ critique.titre }}">
+                            <h4>Commentaires</h4>
+
+                            <div class="comment-list">
+                                {% for commentaire in critique.commentaires.all %}
+                                    <article class="comment-item">
+                                        <header class="comment-header">
+                                            <strong>{{ commentaire.utilisateur.username }}</strong>
+                                            <time datetime="{{ commentaire.date_publication|date:'c' }}">
+                                                {{ commentaire.date_publication|date:"d/m/Y à H:i" }}
+                                            </time>
+                                        </header>
+                                        <p>{{ commentaire.texte }}</p>
+                                    </article>
+                                {% empty %}
+                                    <p class="comment-empty">Aucun commentaire pour cette critique.</p>
+                                {% endfor %}
+                            </div>
+
+                            {% if user.is_authenticated %}
+                                <form
+                                    method="post"
+                                    action="{% url 'movies:ajouter_commentaire' critique.pk %}"
+                                    class="comment-form"
+                                    novalidate
+                                >
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label for="{{ critique.comment_form.texte.id_for_label }}" class="form-label">
+                                            {{ critique.comment_form.texte.label }}
+                                        </label>
+                                        {{ critique.comment_form.texte }}
+                                        {% if critique.comment_form.texte.errors %}
+                                            <div class="form-errors">{{ critique.comment_form.texte.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    {% if critique.comment_form.non_field_errors %}
+                                        <div class="form-errors form-errors-global">
+                                            {{ critique.comment_form.non_field_errors }}
+                                        </div>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        Publier le commentaire
+                                    </button>
+                                </form>
+                            {% else %}
+                                <p class="comment-login-prompt">
+                                    <a href="{% url 'accounts:connexion' %}?next={{ request.get_full_path|urlencode }}%23critique-{{ critique.pk }}">
+                                        Connectez-vous
+                                    </a>
+                                    pour commenter cette critique.
+                                </p>
+                            {% endif %}
+                        </section>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>Aucune critique publiée</h3>
+                <p>Ce film ne possède pas encore de critique.</p>
+            </div>
+        {% endif %}
+    </section>
+
+</section>
+{% endblock %}

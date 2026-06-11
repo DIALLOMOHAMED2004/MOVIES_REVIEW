@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Créer un compte - Movie Review{% endblock %}
+
+{% block content %}
+<section class="auth-layout">
+    <div class="auth-header">
+        <h1>Créer un Compte</h1>
+        <p>Rejoignez la communauté Movie Review et partagez vos avis</p>
+    </div>
+
+    <form method="post" class="auth-card" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors form-errors-global">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-stack">
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                {{ form.username }}
+                {% if form.username.help_text %}
+                    <p class="field-help">{{ form.username.help_text }}</p>
+                {% endif %}
+                {% if form.username.errors %}
+                    <div class="form-errors">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                {{ form.email }}
+                {% if form.email.help_text %}
+                    <p class="field-help">{{ form.email.help_text }}</p>
+                {% endif %}
+                {% if form.email.errors %}
+                    <div class="form-errors">{{ form.email.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}" class="form-label">{{ form.password1.label }}</label>
+                {{ form.password1 }}
+                {% if form.password1.help_text %}
+                    <p class="field-help">{{ form.password1.help_text }}</p>
+                {% endif %}
+                {% if form.password1.errors %}
+                    <div class="form-errors">{{ form.password1.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}" class="form-label">{{ form.password2.label }}</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div class="form-errors">{{ form.password2.errors }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Créer mon Compte</button>
+        </div>
+    </form>
+
+    <p class="auth-alt">
+        Vous avez déjà un compte ?
+        <a href="{% url 'accounts:connexion' %}">Connectez-vous</a>
+    </p>
+</section>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier mon profil - Movie Review{% endblock %}
+
+{% block content %}
+<section class="auth-layout auth-layout-wide">
+    <div class="auth-header">
+        <a href="{% url 'accounts:profil' %}" class="back-link">Retour au profil</a>
+        <h1>Modifier mon Profil</h1>
+    </div>
+
+    <form method="post" class="auth-card" novalidate>
+        {% csrf_token %}
+
+        {% if profile_form.non_field_errors %}
+            <div class="form-errors form-errors-global">
+                {{ profile_form.non_field_errors }}
+            </div>
+        {% endif %}
+        {% if password_form.non_field_errors %}
+            <div class="form-errors form-errors-global">
+                {{ password_form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-stack">
+            <div class="form-group">
+                <label for="{{ profile_form.username.id_for_label }}" class="form-label">{{ profile_form.username.label }}</label>
+                {{ profile_form.username }}
+                {% if profile_form.username.help_text %}
+                    <p class="field-help">{{ profile_form.username.help_text }}</p>
+                {% endif %}
+                {% if profile_form.username.errors %}
+                    <div class="form-errors">{{ profile_form.username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ profile_form.email.id_for_label }}" class="form-label">{{ profile_form.email.label }}</label>
+                {{ profile_form.email }}
+                {% if profile_form.email.errors %}
+                    <div class="form-errors">{{ profile_form.email.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-section">
+                <h2>Changer le mot de passe <span>(optionnel)</span></h2>
+
+                <div class="form-group">
+                    <label for="{{ password_form.old_password.id_for_label }}" class="form-label">{{ password_form.old_password.label }}</label>
+                    {{ password_form.old_password }}
+                    {% if password_form.old_password.errors %}
+                        <div class="form-errors">{{ password_form.old_password.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ password_form.new_password1.id_for_label }}" class="form-label">{{ password_form.new_password1.label }}</label>
+                    {{ password_form.new_password1 }}
+                    {% if password_form.new_password1.help_text %}
+                        <p class="field-help">{{ password_form.new_password1.help_text }}</p>
+                    {% endif %}
+                    {% if password_form.new_password1.errors %}
+                        <div class="form-errors">{{ password_form.new_password1.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ password_form.new_password2.id_for_label }}" class="form-label">{{ password_form.new_password2.label }}</label>
+                    {{ password_form.new_password2 }}
+                    {% if password_form.new_password2.errors %}
+                        <div class="form-errors">{{ password_form.new_password2.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Enregistrer les Modifications</button>
+                <a href="{% url 'accounts:profil' %}" class="btn btn-secondary">Annuler</a>
+            </div>
+        </div>
+    </form>
+</section>
+{% endblock %}

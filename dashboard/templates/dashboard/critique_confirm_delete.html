@@ -1,0 +1,26 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Supprimer une critique - Dashboard{% endblock %}
+
+{% block dashboard_content %}
+<article class="delete-confirmation card">
+    <header>
+        <h1>Supprimer la critique</h1>
+        <p class="page-copy">Cette action supprime la critique et ses commentaires associés.</p>
+    </header>
+
+    <section class="dashboard-delete-details">
+        <p><strong>Film :</strong> {{ object.film.titre }}</p>
+        <p><strong>Auteur :</strong> {{ object.utilisateur.username }}</p>
+        <p><strong>Note :</strong> {{ object.note }}/5</p>
+        <p><strong>Titre :</strong> {{ object.titre }}</p>
+        <p>{{ object.texte|truncatechars:240 }}</p>
+    </section>
+
+    <form method="post" class="form-actions">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-danger">Supprimer définitivement</button>
+        <a href="{% url 'dashboard:critique_list' %}" class="btn btn-secondary">Annuler</a>
+    </form>
+</article>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Catalogue de Films - Movie Review{% endblock %}
+
+{% block content %}
+<section class="catalog-page">
+    <header class="page-header">
+        <div>
+            <h1>Catalogue de Films</h1>
+            <p class="page-copy">Recherchez un film ou filtrez le catalogue par genre, année ou note minimale.</p>
+        </div>
+    </header>
+
+    <section class="catalog-filters card card-soft">
+        <form method="get" class="catalog-filter-form">
+            <div class="form-row search-row">
+                <div class="form-group">
+                    <label class="form-label" for="q">Recherche</label>
+                    <input id="q" name="q" type="search" class="form-control search-input" placeholder="Rechercher un film, un genre, un acteur ou une année..." value="{{ selected_q }}">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="genre">Genre</label>
+                    <select id="genre" name="genre" class="form-control">
+                        <option value="">Tous les genres</option>
+                        {% for genre in genres %}
+                            <option value="{{ genre.id }}" {% if selected_genre == genre.id|stringformat:"s" %}selected{% endif %}>{{ genre.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="annee">Année</label>
+                    <select id="annee" name="annee" class="form-control">
+                        <option value="">Toutes les années</option>
+                        {% for annee in annees %}
+                            <option value="{{ annee }}" {% if selected_annee == annee|stringformat:"s" %}selected{% endif %}>{{ annee }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="note_min">Note minimale</label>
+                    <input id="note_min" name="note_min" type="number" step="0.1" min="0" max="5" class="form-control" placeholder="Ex. 3.5" value="{{ selected_note_min }}">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Filtrer</button>
+                <a href="{% url 'movies:films' %}" class="btn btn-secondary btn-sm">Réinitialiser</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="catalog-summary">
+        <p class="text-muted">{{ nombre_films }} film{{ nombre_films|pluralize }} trouvé{{ nombre_films|pluralize }}</p>
+    </section>
+
+    {% if films %}
+        <section class="film-grid">
+            {% for film in films %}
+                <article class="film-card card">
+                    <div class="film-card-media">
+                        {% if film.affiche %}
+                            <img src="{{ film.affiche.url }}" alt="Affiche de {{ film.titre }}">
+                        {% else %}
+                            <div class="film-card-placeholder">
+                                <span>Aucune affiche</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="film-card-body">
+                        <h2>{{ film.titre }}</h2>
+                        <p class="film-meta">{{ film.genre.nom }} · {{ film.annee_sortie }} · {{ film.duree_minutes }} min</p>
+                        <p class="film-rating">{{ film.afficher_note }}</p>
+                        <p class="film-reviews">{{ film.nombre_critiques }} critique{{ film.nombre_critiques|pluralize }}</p>
+                        <a href="{% url 'movies:film_detail' film.pk %}" class="btn btn-primary btn-sm">Voir détails</a>
+                    </div>
+                </article>
+            {% endfor %}
+        </section>
+    {% else %}
+        <section class="empty-state card">
+            <h2>Aucun film ne correspond à votre recherche ou à vos filtres</h2>
+            <p>Essayez de modifier votre recherche, d'ajuster les filtres ou de réinitialiser les critères.</p>
+        </section>
+    {% endif %}
+</section>
+{% endblock %}

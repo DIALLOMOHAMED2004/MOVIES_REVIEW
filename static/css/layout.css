@@ -33,6 +33,20 @@
     flex-shrink: 0;
 }
 
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    background-color: rgba(139, 41, 66, 0.25);
+    border: 1px solid var(--border-primary);
+    color: var(--color-primary-light);
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
 .brand-icon {
     width: 34px;
     height: 34px;
@@ -77,6 +91,17 @@
 
 .nav-auth-link:hover {
     color: var(--color-primary-light);
+}
+
+.nav-logout-form {
+    margin: 0;
+}
+
+.nav-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
 }
 
 .main-content {

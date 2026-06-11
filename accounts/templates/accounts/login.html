@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - Movie Review{% endblock %}
+
+{% block content %}
+<section class="auth-layout">
+    <form method="post" class="auth-card" novalidate>
+        {% csrf_token %}
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+
+        <div class="auth-card-header">
+            <h1>Connexion</h1>
+            <p>Accédez à votre compte Movie Review</p>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="form-errors form-errors-global">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-stack">
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="form-errors">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="form-errors">{{ form.password.errors }}</div>
+                {% endif %}
+                <a href="{% url 'accounts:password_reset' %}" class="auth-inline-link">
+                    Mot de passe oublié ?
+                </a>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Se Connecter</button>
+        </div>
+
+        <p class="auth-alt auth-alt-card">
+            Pas encore de compte ?
+            <a href="{% url 'accounts:inscription' %}">Inscrivez-vous</a>
+        </p>
+    </form>
+</section>
+{% endblock %}

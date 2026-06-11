@@ -9,6 +9,7 @@ standard pour la gestion et la modération.
 ## Fonctionnalités principales
 
 - Catalogue de films filtrable par genre, année et note minimale.
+- Recherche textuelle simple dans le catalogue (titre, synopsis, genre, acteur) via le paramètre GET `q`.
 - Détail d'un film avec synopsis, casting, critiques et commentaires.
 - Inscription, connexion par nom d'utilisateur ou email, profil et réinitialisation
   du mot de passe.

@@ -435,6 +435,15 @@
     gap: 1rem;
 }
 
+/* Ligne spécifique pour la recherche pleine largeur dans le formulaire */
+.catalog-filter-form .form-row.search-row {
+    grid-template-columns: 1fr;
+}
+
+.catalog-filter-form .search-input {
+    width: 100%;
+}
+
 .catalog-summary {
     color: var(--text-secondary);
 }

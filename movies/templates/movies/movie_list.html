@@ -13,6 +13,13 @@
 
     <section class="catalog-filters card card-soft">
         <form method="get" class="catalog-filter-form">
+            <div class="form-row search-row">
+                <div class="form-group">
+                    <label class="form-label" for="q">Recherche</label>
+                    <input id="q" name="q" type="search" class="form-control search-input" placeholder="Rechercher un film, un genre, un acteur..." value="{{ selected_q }}">
+                </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label" for="genre">Genre</label>

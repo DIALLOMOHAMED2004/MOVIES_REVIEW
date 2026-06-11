@@ -445,6 +445,133 @@ class MovieListViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("movies:film_detail", args=[self.film_note.pk]))
 
+    # ------------------------------------------------------------------
+    # Tests pour la recherche textuelle simple (paramètre `q`)
+    # ------------------------------------------------------------------
+    def test_films_page_search_by_title(self):
+        film = Film.objects.create(
+            titre="Unique Search Title",
+            synopsis="Recherche titre",
+            genre=self.genre_action,
+            date_sortie=date(2020, 1, 1),
+            duree_minutes=100,
+        )
+
+        response = self.client.get(reverse("movies:films"), {"q": "unique search title"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Unique Search Title")
+
+    def test_films_page_search_by_synopsis(self):
+        film = Film.objects.create(
+            titre="Film Syn",
+            synopsis="epic space opera",
+            genre=self.genre_action,
+            date_sortie=date(2021, 5, 1),
+            duree_minutes=95,
+        )
+
+        response = self.client.get(reverse("movies:films"), {"q": "space"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Film Syn")
+
+    def test_films_page_search_by_genre_name(self):
+        response = self.client.get(reverse("movies:films"), {"q": "action"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Film noté")
+        self.assertNotContains(response, "Film sans note")
+
+    def test_films_page_search_by_actor_name(self):
+        acteur = Acteur.objects.create(nom="Camille Test")
+        # Attache l'acteur à un film existant
+        self.film_sans_note.acteurs.add(acteur)
+
+        response = self.client.get(reverse("movies:films"), {"q": "Camille"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Film sans note")
+
+    def test_films_page_search_is_case_insensitive(self):
+        film = Film.objects.create(
+            titre="CaseTest",
+            synopsis="Case insensitive check",
+            genre=self.genre_action,
+            date_sortie=date(2022, 6, 1),
+            duree_minutes=90,
+        )
+
+        response = self.client.get(reverse("movies:films"), {"q": "casetest"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CaseTest")
+
+    def test_films_page_empty_search_shows_normal_catalog(self):
+        response = self.client.get(reverse("movies:films"), {"q": "   "})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Film noté")
+        self.assertContains(response, "Film sans note")
+
+    def test_films_page_search_no_results_shows_empty_state(self):
+        response = self.client.get(reverse("movies:films"), {"q": "no-such-film-xyz"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Aucun film ne correspond aux filtres")
+
+    def test_films_page_search_combined_with_genre(self):
+        film = Film.objects.create(
+            titre="Combo Film",
+            synopsis="Combo",
+            genre=self.genre_action,
+            date_sortie=date(2022, 1, 1),
+            duree_minutes=100,
+        )
+
+        response = self.client.get(reverse("movies:films"), {"q": "Combo", "genre": self.genre_action.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Combo Film")
+
+    def test_films_page_search_combined_with_year(self):
+        film = Film.objects.create(
+            titre="Year Film",
+            synopsis="Year filter",
+            genre=self.genre_action,
+            date_sortie=date(2019, 4, 1),
+            duree_minutes=100,
+        )
+
+        response = self.client.get(reverse("movies:films"), {"q": "Year", "annee": "2019"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Year Film")
+
+    def test_films_page_search_combined_with_note_min(self):
+        film = Film.objects.create(
+            titre="Note Film",
+            synopsis="Note filter",
+            genre=self.genre_action,
+            date_sortie=date(2020, 2, 1),
+            duree_minutes=100,
+            note_moyenne=Decimal("4.5"),
+            nombre_critiques=2,
+        )
+
+        response = self.client.get(reverse("movies:films"), {"q": "Note", "note_min": "4"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Note Film")
+
+    def test_films_page_search_does_not_duplicate_films(self):
+        film = Film.objects.create(
+            titre="Dup Film",
+            synopsis="Dup",
+            genre=self.genre_action,
+            date_sortie=date(2021, 3, 1),
+            duree_minutes=100,
+        )
+        # Ajoute deux acteurs qui correspondent tous deux au même terme de recherche
+        a1 = Acteur.objects.create(nom="DupActor")
+        a2 = Acteur.objects.create(nom="DupActor")
+        film.acteurs.add(a1, a2)
+
+        response = self.client.get(reverse("movies:films"), {"q": "DupActor"})
+        self.assertEqual(response.status_code, 200)
+        # Le queryset exposé au template ne doit contenir qu'une seule occurrence du film
+        self.assertEqual(len(response.context["films"]), 1)
+
 
 # ============================================================================
 # Tests Phase 4 — Détail film et cycle de vie des critiques

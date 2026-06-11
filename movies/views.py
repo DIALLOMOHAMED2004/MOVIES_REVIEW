@@ -536,14 +536,15 @@ class HomeView(TemplateView):
 # selon plusieurs critères présents dans la query string :
 # - genre ;
 # - année de sortie ;
-# - note minimale.
+# - note minimale ;
+# - recherche textuelle simple.
 #
 # Exemple d'URL possible :
-# /films/?genre=1&annee=2024&note_min=4
+# /films/?q=Action&genre=1&annee=2024&note_min=4
 
 
 class MovieListView(TemplateView):
-    """Catalogue de films avec filtres par genre, année et note minimale."""
+    """Catalogue de films avec recherche et filtres."""
 
     # Template HTML du catalogue.
     template_name = "movies/movie_list.html"
@@ -565,7 +566,7 @@ class MovieListView(TemplateView):
             - les genres disponibles ;
             - les années disponibles ;
             - le nombre de films correspondant ;
-            - les valeurs de filtres conservées pour l'affichage du formulaire.
+            - les valeurs de recherche et filtres conservées pour l'affichage du formulaire.
 
         Validation des filtres
         ----------------------
@@ -642,15 +643,18 @@ class MovieListView(TemplateView):
                 selected_note_min = ""
 
         # Application de la recherche textuelle simple lorsque fournie.
-        # Recherche sur : titre, synopsis, nom de genre, nom des acteurs.
+        # Recherche sur : titre, nom de genre, nom des acteurs, et année si la
+        # saisie ressemble à une année.
         if selected_q:
             # Construit un filtre OR sur les champs ciblés.
             recherche_filter = (
                 Q(titre__icontains=selected_q)
-                | Q(synopsis__icontains=selected_q)
                 | Q(genre__nom__icontains=selected_q)
                 | Q(acteurs__nom__icontains=selected_q)
             )
+
+            if selected_q.isdigit() and len(selected_q) == 4:
+                recherche_filter |= Q(date_sortie__year=int(selected_q))
 
             # Applique le filtre puis distinct() pour éviter les doublons
             # si plusieurs acteurs correspondent ou plusieurs relations.

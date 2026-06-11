@@ -11,6 +11,45 @@
     <a href="{% url 'dashboard:film_create' %}" class="btn btn-primary">Ajouter un film</a>
 </header>
 
+<section class="catalog-filters card card-soft">
+    <form method="get" class="catalog-filter-form">
+        <div class="form-row search-row">
+            <div class="form-group">
+                <label class="form-label" for="q">Recherche</label>
+                <input id="q" name="q" type="search" class="form-control search-input" placeholder="Titre, genre, acteur ou année..." value="{{ filtres.q }}">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="genre">Genre</label>
+                <select id="genre" name="genre" class="form-control">
+                    <option value="">Tous les genres</option>
+                    {% for genre in genres_filtre %}
+                        <option value="{{ genre.pk }}" {% if filtres.genre == genre.pk|stringformat:"s" %}selected{% endif %}>{{ genre.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="annee">Année</label>
+                <select id="annee" name="annee" class="form-control">
+                    <option value="">Toutes les années</option>
+                    {% for annee in annees_filtre %}
+                        <option value="{{ annee }}" {% if filtres.annee == annee|stringformat:"s" %}selected{% endif %}>{{ annee }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="note_min">Note minimale</label>
+                <input id="note_min" name="note_min" type="number" step="0.1" min="0" max="5" class="form-control" placeholder="Ex. 3.5" value="{{ filtres.note_min }}">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+            <a href="{% url 'dashboard:film_list' %}" class="btn btn-secondary btn-sm">Réinitialiser</a>
+        </div>
+    </form>
+</section>
+
 <div class="dashboard-table-wrapper card">
     <table class="dashboard-table">
         <thead>

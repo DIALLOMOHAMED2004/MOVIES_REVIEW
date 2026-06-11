@@ -7,7 +7,7 @@
     <header class="page-header">
         <div>
             <h1>Catalogue de Films</h1>
-            <p class="page-copy">Filtrez les films par genre, année ou note minimale.</p>
+            <p class="page-copy">Recherchez un film ou filtrez le catalogue par genre, année ou note minimale.</p>
         </div>
     </header>
 
@@ -16,7 +16,7 @@
             <div class="form-row search-row">
                 <div class="form-group">
                     <label class="form-label" for="q">Recherche</label>
-                    <input id="q" name="q" type="search" class="form-control search-input" placeholder="Rechercher un film, un genre, un acteur..." value="{{ selected_q }}">
+                    <input id="q" name="q" type="search" class="form-control search-input" placeholder="Rechercher un film, un genre, un acteur ou une année..." value="{{ selected_q }}">
                 </div>
             </div>
 
@@ -83,8 +83,8 @@
         </section>
     {% else %}
         <section class="empty-state card">
-            <h2>Aucun film ne correspond aux filtres</h2>
-            <p>Essayez de réinitialiser les filtres ou de modifier vos critères.</p>
+            <h2>Aucun film ne correspond à votre recherche ou à vos filtres</h2>
+            <p>Essayez de modifier votre recherche, d'ajuster les filtres ou de réinitialiser les critères.</p>
         </section>
     {% endif %}
 </section>

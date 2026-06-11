@@ -437,7 +437,7 @@ class MovieListViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Film noté")
         self.assertNotContains(response, "Film sans note")
-        self.assertContains(response, "Aucun film ne correspond aux filtres")
+        self.assertContains(response, "Aucun film ne correspond à votre recherche ou à vos filtres")
 
     # Vérifie que chaque film du catalogue propose un lien vers sa page de détail.
     def test_films_page_contains_detail_link(self):
@@ -456,12 +456,20 @@ class MovieListViewTests(TestCase):
             date_sortie=date(2020, 1, 1),
             duree_minutes=100,
         )
+        synopsis_only = Film.objects.create(
+            titre="Noise Film",
+            synopsis="Unique Search Title",
+            genre=self.genre_action,
+            date_sortie=date(2021, 1, 1),
+            duree_minutes=100,
+        )
 
         response = self.client.get(reverse("movies:films"), {"q": "unique search title"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Unique Search Title")
+        self.assertNotContains(response, "Noise Film")
 
-    def test_films_page_search_by_synopsis(self):
+    def test_films_page_search_does_not_match_synopsis_only(self):
         film = Film.objects.create(
             titre="Film Syn",
             synopsis="epic space opera",
@@ -472,13 +480,34 @@ class MovieListViewTests(TestCase):
 
         response = self.client.get(reverse("movies:films"), {"q": "space"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Film Syn")
+        self.assertNotContains(response, "Film Syn")
 
     def test_films_page_search_by_genre_name(self):
         response = self.client.get(reverse("movies:films"), {"q": "action"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Film noté")
         self.assertNotContains(response, "Film sans note")
+
+    def test_films_page_search_by_release_year(self):
+        film = Film.objects.create(
+            titre="Millennium Target",
+            synopsis="Recherche par annee",
+            genre=self.genre_action,
+            date_sortie=date(2020, 5, 1),
+            duree_minutes=100,
+        )
+        excluded_film = Film.objects.create(
+            titre="Future Target",
+            synopsis="Autre annee",
+            genre=self.genre_action,
+            date_sortie=date(2021, 5, 1),
+            duree_minutes=100,
+        )
+
+        response = self.client.get(reverse("movies:films"), {"q": "2020"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Millennium Target")
+        self.assertNotContains(response, "Future Target")
 
     def test_films_page_search_by_actor_name(self):
         acteur = Acteur.objects.create(nom="Camille Test")
@@ -511,7 +540,7 @@ class MovieListViewTests(TestCase):
     def test_films_page_search_no_results_shows_empty_state(self):
         response = self.client.get(reverse("movies:films"), {"q": "no-such-film-xyz"})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Aucun film ne correspond aux filtres")
+        self.assertContains(response, "Aucun film ne correspond à votre recherche ou à vos filtres")
 
     def test_films_page_search_combined_with_genre(self):
         film = Film.objects.create(
@@ -521,10 +550,18 @@ class MovieListViewTests(TestCase):
             date_sortie=date(2022, 1, 1),
             duree_minutes=100,
         )
+        excluded_film = Film.objects.create(
+            titre="Combo Drama Film",
+            synopsis="Combo",
+            genre=self.genre_drama,
+            date_sortie=date(2022, 1, 1),
+            duree_minutes=100,
+        )
 
         response = self.client.get(reverse("movies:films"), {"q": "Combo", "genre": self.genre_action.id})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Combo Film")
+        self.assertNotContains(response, "Combo Drama Film")
 
     def test_films_page_search_combined_with_year(self):
         film = Film.objects.create(
@@ -534,10 +571,18 @@ class MovieListViewTests(TestCase):
             date_sortie=date(2019, 4, 1),
             duree_minutes=100,
         )
+        excluded_film = Film.objects.create(
+            titre="Year Other Film",
+            synopsis="Year filter",
+            genre=self.genre_action,
+            date_sortie=date(2020, 4, 1),
+            duree_minutes=100,
+        )
 
         response = self.client.get(reverse("movies:films"), {"q": "Year", "annee": "2019"})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Year Film")
+        self.assertNotContains(response, "Year Other Film")
 
     def test_films_page_search_combined_with_note_min(self):
         film = Film.objects.create(

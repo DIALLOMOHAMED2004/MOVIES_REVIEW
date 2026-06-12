@@ -96,6 +96,14 @@ exécuter `python3 manage.py test`.
 | `POSTGRES_PASSWORD` | Mot de passe PostgreSQL | valeur locale |
 | `POSTGRES_HOST` | Hôte PostgreSQL | `localhost` |
 | `POSTGRES_PORT` | Port PostgreSQL | `5432` |
+| `EMAIL_BACKEND` | Backend email Django optionnel | vide ou `django.core.mail.backends.smtp.EmailBackend` |
+| `EMAIL_HOST` | Serveur SMTP optionnel | vide en développement |
+| `EMAIL_PORT` | Port SMTP | `587` |
+| `EMAIL_HOST_USER` | Identifiant SMTP | vide en développement |
+| `EMAIL_HOST_PASSWORD` | Mot de passe ou clé SMTP | vide en développement |
+| `EMAIL_USE_TLS` | Active TLS pour SMTP | `True` selon le fournisseur |
+| `EMAIL_USE_SSL` | Active SSL pour SMTP | `False` |
+| `DEFAULT_FROM_EMAIL` | Adresse expéditeur des emails | `no-reply@example.com` |
 
 Les options suivantes sont destinées à un vrai environnement HTTPS et restent
 désactivées par défaut en développement :
@@ -113,6 +121,17 @@ En production, définir `DEBUG=False`, renseigner les domaines réels dans
 `ALLOWED_HOSTS`, utiliser une nouvelle `SECRET_KEY`, puis activer les options
 HTTPS adaptées. HSTS ne doit être activé qu'après validation complète du
 domaine et de ses sous-domaines.
+
+## Emails de réinitialisation
+
+Par défaut, les emails de réinitialisation du mot de passe sont affichés dans la
+console du serveur de développement. Aucun serveur SMTP n'est obligatoire pour
+lancer le projet ou exécuter les tests.
+
+Pour envoyer de vrais emails, renseigner les variables `EMAIL_*` dans `.env`
+avec les paramètres fournis par Gmail, Mailtrap, Brevo ou un autre fournisseur
+SMTP. Ne jamais committer de vrais identifiants SMTP ni de mot de passe
+d'application dans le dépôt.
 
 ## Initialisation et lancement
 
@@ -209,14 +228,14 @@ MOVIES_REVIEW/
 - Aucun système de signalement, likes, favoris ou notifications.
 - Aucun moteur de recherche textuelle avancée.
 - Aucun envoi d'email externe configuré par défaut : les emails sont affichés
-  dans la console de développement.
+  dans la console de développement, sauf si un SMTP est activé via `.env`.
 - Les listes ne sont pas paginées.
 - Le projet utilise le modèle utilisateur Django standard.
 
 ## Améliorations futures
 
 - Ajouter une pagination adaptée aux catalogues et listes de modération.
-- Configurer un service d'envoi d'emails pour la production.
+- Configurer et tester un service SMTP adapté avant une mise en production.
 - Ajouter un système de signalement modéré sans complexifier les commentaires.
 - Améliorer la recherche avec une recherche avancée, une pagination ou un tri des résultats.
 - Mettre en place une chaîne de déploiement et des tests continus.

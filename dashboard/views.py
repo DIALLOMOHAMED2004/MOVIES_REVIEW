@@ -893,9 +893,77 @@ class CommentaireListView(StaffRequiredMixin, DashboardContextMixin, ListView):
         # critique__utilisateur : auteur de la critique commentée.
         #
         # order_by("-date_publication") affiche les commentaires récents en premier.
-        return Commentaire.objects.select_related(
+        queryset = Commentaire.objects.select_related(
             "utilisateur", "critique__film", "critique__utilisateur"
         ).order_by("-date_publication")
+
+        q = self.request.GET.get("q", "").strip()
+        film = self.request.GET.get("film", "").strip()
+        auteur = self.request.GET.get("auteur", "").strip()
+        critique = self.request.GET.get("critique", "").strip()
+
+        if q:
+            queryset = queryset.filter(texte__icontains=q)
+
+        if film.isdigit() and Film.objects.filter(pk=int(film)).exists():
+            queryset = queryset.filter(critique__film_id=int(film))
+
+        if auteur.isdigit() and get_user_model().objects.filter(pk=int(auteur)).exists():
+            queryset = queryset.filter(utilisateur_id=int(auteur))
+
+        if critique.isdigit() and Critique.objects.filter(pk=int(critique)).exists():
+            queryset = queryset.filter(critique_id=int(critique))
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        User = get_user_model()
+        context = super().get_context_data(**kwargs)
+
+        selected_q = self.request.GET.get("q", "").strip()
+        selected_film = self.request.GET.get("film", "").strip()
+        selected_auteur = self.request.GET.get("auteur", "").strip()
+        selected_critique = self.request.GET.get("critique", "").strip()
+
+        films = (
+            Film.objects.filter(critiques__commentaires__isnull=False)
+            .distinct()
+            .order_by("titre")
+        )
+        auteurs = (
+            User.objects.filter(commentaires__isnull=False)
+            .distinct()
+            .order_by("username")
+        )
+        critiques = (
+            Critique.objects.filter(commentaires__isnull=False)
+            .select_related("film", "utilisateur")
+            .distinct()
+            .order_by("film__titre", "titre")
+        )
+
+        context.update(
+            {
+                "filtres": {
+                    "q": selected_q,
+                    "film": selected_film,
+                    "auteur": selected_auteur,
+                    "critique": selected_critique,
+                },
+                "films": films,
+                "auteurs": auteurs,
+                "critiques": critiques,
+                "films_filtre": films,
+                "auteurs_filtre": auteurs,
+                "critiques_filtre": critiques,
+                "selected_q": selected_q,
+                "selected_film": selected_film,
+                "selected_auteur": selected_auteur,
+                "selected_critique": selected_critique,
+            }
+        )
+
+        return context
 
 
 class CommentaireDeleteView(StaffRequiredMixin, DashboardContextMixin, DeleteView):

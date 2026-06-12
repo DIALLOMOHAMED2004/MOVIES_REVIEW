@@ -149,6 +149,14 @@ class DashboardAccessTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
+    def test_normal_user_cannot_access_comment_list(self):
+        # Vérifie que la liste de modération des commentaires reste protégée.
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("dashboard:commentaire_list"))
+
+        self.assertEqual(response.status_code, 403)
+
     def test_dashboard_link_is_visible_for_staff_user(self):
         # Vérifie que le lien vers le dashboard est affiché
         # pour un utilisateur staff sur la page d'accueil publique.
@@ -459,6 +467,176 @@ class DashboardFunctionalTests(TestCase):
         self.assertEqual(
             set(response.context["critiques"]),
             {self.critique, other_review},
+        )
+
+    def test_staff_can_access_comment_list(self):
+        # Vérifie qu'un utilisateur staff peut accéder à la liste des commentaires.
+        response = self.client.get(reverse("dashboard:commentaire_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Commentaires")
+        self.assertContains(response, "Je partage cet avis.")
+        self.assertContains(response, '<input id="q" name="q" type="search"')
+        self.assertContains(response, '<select id="film" name="film" class="form-control">')
+        self.assertContains(response, '<select id="auteur" name="auteur" class="form-control">')
+        self.assertContains(response, '<select id="critique" name="critique" class="form-control">')
+
+    def test_comment_list_filters_by_text(self):
+        # Vérifie que la recherche porte sur le texte du commentaire.
+        Commentaire.objects.create(
+            critique=self.critique,
+            utilisateur=self.user,
+            texte="Un commentaire sans le mot recherché.",
+        )
+
+        response = self.client.get(
+            reverse("dashboard:commentaire_list"),
+            {"q": "partage"},
+        )
+
+        self.assertEqual(list(response.context["commentaires"]), [self.commentaire])
+        self.assertContains(response, "Je partage cet avis.")
+        self.assertNotContains(response, "Un commentaire sans le mot recherché.")
+        self.assertContains(response, 'value="partage"')
+
+    def test_comment_list_filters_by_movie(self):
+        # Vérifie le filtre par film concerné par la critique commentée.
+        other_film = Film.objects.create(
+            titre="Aube froide",
+            synopsis="Un autre film.",
+            genre=self.genre,
+            date_sortie="2025-02-01",
+            duree_minutes=98,
+        )
+        other_review = Critique.objects.create(
+            film=other_film,
+            utilisateur=self.user,
+            titre="Avis sur Aube froide",
+            texte="Une autre critique.",
+            note=3,
+        )
+        Commentaire.objects.create(
+            critique=other_review,
+            utilisateur=self.user,
+            texte="Commentaire sur un autre film.",
+        )
+
+        response = self.client.get(
+            reverse("dashboard:commentaire_list"),
+            {"film": str(self.film.pk)},
+        )
+
+        self.assertEqual(list(response.context["commentaires"]), [self.commentaire])
+        self.assertContains(response, "Nuit rouge")
+        self.assertNotContains(response, "Commentaire sur un autre film.")
+        self.assertContains(response, f'<option value="{self.film.pk}" selected>')
+
+    def test_comment_list_filters_by_author(self):
+        # Vérifie le filtre par auteur du commentaire.
+        User = get_user_model()
+        other_user = User.objects.create_user(
+            username="bob",
+            email="bob@example.com",
+            password="password",
+        )
+        Commentaire.objects.create(
+            critique=self.critique,
+            utilisateur=other_user,
+            texte="Commentaire écrit par Bob.",
+        )
+
+        response = self.client.get(
+            reverse("dashboard:commentaire_list"),
+            {"auteur": str(self.user.pk)},
+        )
+
+        self.assertEqual(list(response.context["commentaires"]), [self.commentaire])
+        self.assertContains(response, "alice")
+        self.assertNotContains(response, "Commentaire écrit par Bob.")
+        self.assertContains(response, f'<option value="{self.user.pk}" selected>')
+
+    def test_comment_list_combines_filters(self):
+        # Vérifie qu'une combinaison de filtres limite correctement les résultats.
+        User = get_user_model()
+        other_user = User.objects.create_user(
+            username="bob",
+            email="bob@example.com",
+            password="password",
+        )
+        other_film = Film.objects.create(
+            titre="Aube froide",
+            synopsis="Un autre film.",
+            genre=self.genre,
+            date_sortie="2025-02-01",
+            duree_minutes=98,
+        )
+        other_review = Critique.objects.create(
+            film=other_film,
+            utilisateur=other_user,
+            titre="Avis sur Aube froide",
+            texte="Une autre critique.",
+            note=2,
+        )
+        matching_comment = Commentaire.objects.create(
+            critique=self.critique,
+            utilisateur=self.user,
+            texte="Ce passage contient un spoiler précis.",
+        )
+        Commentaire.objects.create(
+            critique=other_review,
+            utilisateur=self.user,
+            texte="Spoiler sur un autre film.",
+        )
+        Commentaire.objects.create(
+            critique=self.critique,
+            utilisateur=other_user,
+            texte="Spoiler écrit par un autre auteur.",
+        )
+
+        response = self.client.get(
+            reverse("dashboard:commentaire_list"),
+            {
+                "q": "spoiler",
+                "film": str(self.film.pk),
+                "auteur": str(self.user.pk),
+            },
+        )
+
+        self.assertEqual(list(response.context["commentaires"]), [matching_comment])
+        self.assertContains(response, "Ce passage contient un spoiler précis.")
+        self.assertNotContains(response, "Spoiler sur un autre film.")
+        self.assertNotContains(response, "Spoiler écrit par un autre auteur.")
+
+    def test_comment_list_ignores_invalid_filter_values(self):
+        # Vérifie que les valeurs invalides sont ignorées sans casser la page.
+        other_comment = Commentaire.objects.create(
+            critique=self.critique,
+            utilisateur=self.user,
+            texte="Un second commentaire visible.",
+        )
+
+        response = self.client.get(
+            reverse("dashboard:commentaire_list"),
+            {"film": "invalide", "auteur": "-1", "critique": "999999"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            set(response.context["commentaires"]),
+            {self.commentaire, other_comment},
+        )
+
+    def test_comment_list_empty_state_with_filters(self):
+        # Vérifie le message affiché lorsqu'aucun commentaire ne correspond.
+        response = self.client.get(
+            reverse("dashboard:commentaire_list"),
+            {"q": "aucun-resultat"},
+        )
+
+        self.assertEqual(list(response.context["commentaires"]), [])
+        self.assertContains(
+            response,
+            "Aucun commentaire ne correspond aux critères sélectionnés.",
         )
 
     def test_staff_can_access_movie_list(self):

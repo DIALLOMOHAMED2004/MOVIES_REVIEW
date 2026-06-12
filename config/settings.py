@@ -158,9 +158,25 @@ LOGIN_REDIRECT_URL = "accounts:profil"
 LOGOUT_REDIRECT_URL = "movies:accueil"
 
 
-# Email de développement : les emails sont affichés dans la console locale.
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "no-reply@movie-review.local"
+# Email : console par défaut en local, SMTP activable via variables d'environnement.
+EMAIL_HOST = os.getenv("EMAIL_HOST", "").strip()
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    (
+        "django.core.mail.backends.smtp.EmailBackend"
+        if EMAIL_HOST
+        else "django.core.mail.backends.console.EmailBackend"
+    ),
+)
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    "no-reply@movie-review.local",
+)
 
 
 # Ces options restent désactivées par défaut pour le développement HTTP local.

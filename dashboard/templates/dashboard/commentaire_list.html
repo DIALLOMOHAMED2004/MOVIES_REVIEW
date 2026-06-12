@@ -8,6 +8,50 @@
     <p class="page-copy">Consultation et suppression des commentaires abusifs.</p>
 </header>
 
+<section class="catalog-filters card card-soft">
+    <form method="get" class="catalog-filter-form">
+        <div class="form-row search-row">
+            <div class="form-group">
+                <label class="form-label" for="q">Recherche</label>
+                <input id="q" name="q" type="search" class="form-control search-input" value="{{ selected_q }}" placeholder="Mot dans le commentaire">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" for="film">Film</label>
+                <select id="film" name="film" class="form-control">
+                    <option value="">Tous les films</option>
+                    {% for film in films_filtre %}
+                        <option value="{{ film.pk }}" {% if selected_film == film.pk|stringformat:"s" %}selected{% endif %}>{{ film.titre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="auteur">Auteur</label>
+                <select id="auteur" name="auteur" class="form-control">
+                    <option value="">Tous les auteurs</option>
+                    {% for auteur in auteurs_filtre %}
+                        <option value="{{ auteur.pk }}" {% if selected_auteur == auteur.pk|stringformat:"s" %}selected{% endif %}>{{ auteur.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="critique">Critique</label>
+                <select id="critique" name="critique" class="form-control">
+                    <option value="">Toutes les critiques</option>
+                    {% for critique in critiques_filtre %}
+                        <option value="{{ critique.pk }}" {% if selected_critique == critique.pk|stringformat:"s" %}selected{% endif %}>{{ critique.film.titre }} - {{ critique.titre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+            <a href="{% url 'dashboard:commentaire_list' %}" class="btn btn-secondary btn-sm">Réinitialiser</a>
+        </div>
+    </form>
+</section>
+
 <div class="dashboard-table-wrapper card">
     <table class="dashboard-table">
         <thead>
@@ -36,7 +80,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7">Aucun commentaire.</td>
+                    <td colspan="7">Aucun commentaire ne correspond aux critères sélectionnés.</td>
                 </tr>
             {% endfor %}
         </tbody>
